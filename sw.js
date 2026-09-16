@@ -1,5 +1,5 @@
 // عامل الخدمة: يخزّن التطبيق محليا ليعمل بلا اتصال، ولا يتدخل أبدا في طلبات Supabase
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = "mukhattat-" + CACHE_VERSION;
 
 // عنوان مكتبة supabase-js نفسه المستعمل في index.html (نسخة مثبّتة)

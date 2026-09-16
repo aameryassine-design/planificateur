@@ -77,6 +77,28 @@ const T = {
   freqDaily: "كل يوم",
   freqDays: "أيام محددة",
   errorDaysRequired: "الرجاء اختيار يوم واحد على الأقل",
+  freqForcedDaily: "العادات المهمة جدًا تكون كل يوم",
+  habitManageTitle: "إدارة العادات",
+
+  // أهمية العادة
+  priorityLabel: "الأهمية",
+  priorityHigh: "مهم جدًا",
+  priorityMedium: "مهم",
+  priorityNormal: "عادي",
+  priorityLow: "ثانوي",
+  priorityBadgeHigh: "!!",
+  confirmDowngradeImportant: "هذه عادة مهمة جدًا، هل أنت متأكد؟",
+  confirmForceDailyMessage: "سيتم تحويل هذه العادة إلى كل يوم. هل تريد المتابعة؟",
+
+  // الاستمرارية
+  streakSectionTitle: "الاستمرارية",
+  streakBest: "الرقم القياسي",
+  streakDaysUnit: "يوم",
+  congratsPrefix: "أحسنت!",
+  congratsSuffix: "يومًا متتالية",
+  missedWarningTitle: "فاتتك",
+  missedYesterday: "أمس",
+  noStreakData: "لا توجد بيانات كافية بعد",
 
   // صفحة العادات (الشهرية)
   progress: "التقدم",

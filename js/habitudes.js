@@ -1,8 +1,9 @@
-// منطق صفحة العادات: التقدم الشهري، خريطة الحرارة، منحنى الاتجاه
+// منطق صفحة العادات: تتبع اليوم، الاستمرارية، التقدم الشهري، خريطة الحرارة، منحنى الاتجاه
+// التنقل الرئيسي بالصفحة أصبح باليوم فقط؛ إحصائيات الشهر (التقدم/الخريطة/المنحنى) تتبع
+// تلقائيا شهر اليوم المحدد حاليا (trackDayKey) - لا يوجد تنقل شهري منفصل بعد الآن.
 const Habitudes = (function () {
-  let current = new Date();
-  current.setDate(1);
   let trackDayKey = Utils.todayKey();
+  let eventsBound = false;
 
   let els = {};
 
@@ -16,19 +17,70 @@ const Habitudes = (function () {
     return (await Storage.get("habits-list", [])) || [];
   }
 
-  // يؤشر/يلغي تأشير عادة في يوم معين، ثم يحدّث كل العروض فورا
+  // يجمع habitChecks كل الأيام المخزَّنة في خريطة واحدة {dateKey: habitChecks}
+  // تُستعمل لحساب الاستمرارية (قد تحتاج الرجوع لغاية 400 يوم) وتنبيهات الأيام الفائتة
+  async function loadAllDayChecks() {
+    const keys = await Storage.list("day:");
+    const map = {};
+    for (const key of keys) {
+      const day = await Storage.get(key, null);
+      if (day && day.habitChecks && Object.keys(day.habitChecks).length > 0) {
+        map[key.slice(4)] = day.habitChecks;
+      }
+    }
+    return map;
+  }
+
+  // شهر الإحصائيات مشتق دائما من اليوم المحدد حاليا في "تتبع اليوم"
+  function statsMonthDate() {
+    const d = Utils.parseDateKey(trackDayKey);
+    d.setDate(1);
+    return d;
+  }
+
+  // يؤشر/يلغي تأشير عادة في يوم معين، يكتشف بلوغ عتبة استمرارية جديدة، ثم يحدّث كل العروض فورا
   async function toggleHabitDay(habitId, dateKey) {
+    const habits = await getHabitsList();
+    const habit = habits.find((h) => h.id === habitId);
+    const todayKey = Utils.todayKey();
+
+    const beforeMap = habit ? await loadAllDayChecks() : null;
+    const beforeStreak = habit ? Utils.computeHabitStreak(habit, beforeMap, todayKey).current : 0;
+
     const day = await getDayData(dateKey);
     day.habitChecks = day.habitChecks || {};
+    const willCheck = !day.habitChecks[habitId];
     if (day.habitChecks[habitId]) delete day.habitChecks[habitId];
     else day.habitChecks[habitId] = true;
     await saveDayData(dateKey, day);
+
+    if (habit && willCheck) {
+      const afterMap = await loadAllDayChecks();
+      const afterStreak = Utils.computeHabitStreak(habit, afterMap, todayKey).current;
+      if (afterStreak > beforeStreak && Utils.HABIT_MILESTONES.includes(afterStreak)) {
+        showCongratsToast(`${T.congratsPrefix} ${afterStreak} ${T.congratsSuffix}`);
+      }
+    }
+
     await renderAll();
+  }
+
+  function showCongratsToast(message) {
+    const existing = document.querySelector(".habit-toast");
+    if (existing) existing.remove();
+    const wrap = document.createElement("div");
+    wrap.className = "habit-toast";
+    const inner = document.createElement("div");
+    inner.className = "habit-toast-inner";
+    inner.textContent = message;
+    wrap.appendChild(inner);
+    document.body.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 3000);
   }
 
   function cacheEls() {
     els = {
-      label: document.getElementById("habits-month-label"),
+      statsMonthLabel: document.getElementById("stats-month-label"),
       progressList: document.getElementById("habits-progress-list"),
       heatmap: document.getElementById("habits-heatmap"),
       trend: document.getElementById("habits-trend"),
@@ -37,18 +89,18 @@ const Habitudes = (function () {
       trackList: document.getElementById("track-list"),
       trackUnscheduledDetails: document.getElementById("track-unscheduled"),
       trackUnscheduledSummary: document.getElementById("track-unscheduled-summary"),
-      trackUnscheduledList: document.getElementById("track-unscheduled-list")
+      trackUnscheduledList: document.getElementById("track-unscheduled-list"),
+
+      streaksList: document.getElementById("habits-streaks-list"),
+
+      missedPanel: document.getElementById("habits-missed-panel"),
+      missedList: document.getElementById("habits-missed-list")
     };
   }
 
   function bindEvents() {
-    document.getElementById("habits-month-prev").addEventListener("click", () => shiftMonth(-1));
-    document.getElementById("habits-month-next").addEventListener("click", () => shiftMonth(1));
-    document.getElementById("habits-month-today").addEventListener("click", () => {
-      current = new Date();
-      current.setDate(1);
-      renderAll();
-    });
+    if (eventsBound) return; // حماية من ازدواج الاستماع لو استُدعيت init أكثر من مرة
+    eventsBound = true;
 
     document.getElementById("track-prev").addEventListener("click", () => shiftTrackDay(-1));
     document.getElementById("track-next").addEventListener("click", () => shiftTrackDay(1));
@@ -56,6 +108,36 @@ const Habitudes = (function () {
       trackDayKey = Utils.todayKey();
       renderAll();
     });
+
+    bindSwipeGesture();
+  }
+
+  // سحب أفقي لتغيير اليوم على الهاتف، بما يطابق اتجاه RTL المستعمل في زري السابق/التالي
+  // (السابق › يمينا، التالي ‹ يسارا): سحب نحو اليمين = اليوم السابق، نحو اليسار = التالي
+  function bindSwipeGesture() {
+    const panel = document.getElementById("panel-today-tracking");
+    if (!panel) return;
+    let startX = null;
+    const THRESHOLD = 40;
+    panel.addEventListener(
+      "touchstart",
+      (e) => {
+        startX = e.touches[0].clientX;
+      },
+      { passive: true }
+    );
+    panel.addEventListener(
+      "touchend",
+      (e) => {
+        if (startX === null) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        startX = null;
+        if (Math.abs(dx) < THRESHOLD) return;
+        if (dx > 0) shiftTrackDay(-1);
+        else shiftTrackDay(1);
+      },
+      { passive: true }
+    );
   }
 
   function shiftTrackDay(dir) {
@@ -63,17 +145,12 @@ const Habitudes = (function () {
     renderAll();
   }
 
-  function shiftMonth(dir) {
-    current = Utils.addMonths(current, dir);
-    current.setDate(1);
-    renderAll();
-  }
-
-  // عدد الأيام "المنقضية" في الشهر المعروض لحساب التقدم
+  // عدد الأيام "المنقضية" في شهر الإحصائيات (المشتق من اليوم المحدد) لحساب التقدم
   function elapsedDaysInMonth() {
     const today = new Date();
-    const year = current.getFullYear();
-    const month = current.getMonth();
+    const monthDate = statsMonthDate();
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
     const totalDays = Utils.daysInMonth(year, month);
     if (year === today.getFullYear() && month === today.getMonth()) {
       return today.getDate();
@@ -83,19 +160,79 @@ const Habitudes = (function () {
   }
 
   async function renderAll() {
-    els.label.textContent = Utils.formatMonthLabel(current.getFullYear(), current.getMonth());
+    await renderMissedWarnings();
     await renderTodayTracking();
+    await renderStreaks();
+
+    const monthDate = statsMonthDate();
+    els.statsMonthLabel.textContent = Utils.formatMonthLabel(monthDate.getFullYear(), monthDate.getMonth());
     await renderProgress();
     await renderHeatmap();
     await renderTrend();
   }
 
-  // ----- تتبع اليوم: تأشير العادات ليوم محدد، مع فصل المبرمجة عن غير المبرمجة -----
-  function renderHabitCheckboxRows(container, habitsList, day, dateKey) {
-    container.innerHTML = "";
-    habitsList.forEach((h) => {
+  // غير المؤشَّرة أولا (مرتبة بالأهمية من الأعلى)، ثم المؤشَّرة في الأسفل
+  function sortHabitsForTracking(list, day) {
+    const order = { high: 0, medium: 1, normal: 2, low: 3 };
+    return list.slice().sort((a, b) => {
+      const aDone = !!(day.habitChecks && day.habitChecks[a.id]);
+      const bDone = !!(day.habitChecks && day.habitChecks[b.id]);
+      if (aDone !== bDone) return aDone ? 1 : -1;
+      return order[Utils.habitPriority(a)] - order[Utils.habitPriority(b)];
+    });
+  }
+
+  // ----- تنبيه: عادات "مهم جدًا" فاتت خلال آخر 7 أيام -----
+  async function renderMissedWarnings() {
+    const habits = await getHabitsList();
+    const highHabits = habits.filter((h) => Utils.habitPriority(h) === "high");
+    if (highHabits.length === 0) {
+      els.missedPanel.hidden = true;
+      return;
+    }
+    const checksMap = await loadAllDayChecks();
+    const today = new Date();
+    const yesterdayKey = Utils.dateKey(Utils.addDays(today, -1));
+    const missed = [];
+    for (let i = 1; i <= 7; i++) {
+      const d = Utils.addDays(today, -i);
+      const key = Utils.dateKey(d);
+      highHabits.forEach((h) => {
+        const done = !!(checksMap[key] && checksMap[key][h.id]);
+        if (!done) missed.push({ habit: h, dateKey: key, date: d });
+      });
+    }
+    if (missed.length === 0) {
+      els.missedPanel.hidden = true;
+      return;
+    }
+    els.missedPanel.hidden = false;
+    els.missedList.innerHTML = "";
+    missed.forEach(({ habit, dateKey, date }) => {
       const li = document.createElement("li");
-      li.className = "habit-mini-row";
+      li.className = "habit-mini-row priority-high";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = false;
+      cb.addEventListener("change", () => toggleHabitDay(habit.id, dateKey));
+      li.appendChild(cb);
+      const label = document.createElement("span");
+      label.className = "h-name";
+      const dayLabel = dateKey === yesterdayKey ? T.missedYesterday : Utils.formatShortDate(date);
+      label.textContent = `${T.missedWarningTitle}: ${habit.name} — ${dayLabel}`;
+      li.appendChild(label);
+      els.missedList.appendChild(li);
+    });
+  }
+
+  // ----- تتبع اليوم: تأشير العادات ليوم محدد، مع فصل المبرمجة عن غير المبرمجة -----
+  function renderHabitCheckboxRows(container, habitsList, day, dateKey, checksMap) {
+    container.innerHTML = "";
+    const todayKey = Utils.todayKey();
+    habitsList.forEach((h) => {
+      const priority = Utils.habitPriority(h);
+      const li = document.createElement("li");
+      li.className = "habit-mini-row priority-" + priority;
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = !!day.habitChecks[h.id];
@@ -103,8 +240,15 @@ const Habitudes = (function () {
       li.appendChild(cb);
       const nameSpan = document.createElement("span");
       nameSpan.className = "h-name";
-      nameSpan.textContent = h.name;
+      nameSpan.textContent = (priority === "high" ? T.priorityBadgeHigh + " " : "") + h.name;
       li.appendChild(nameSpan);
+      const { current } = Utils.computeHabitStreak(h, checksMap, todayKey);
+      if (current > 0) {
+        const streakSpan = document.createElement("span");
+        streakSpan.className = "h-streak";
+        streakSpan.textContent = `🔥 ${current}`;
+        li.appendChild(streakSpan);
+      }
       container.appendChild(li);
     });
   }
@@ -113,7 +257,7 @@ const Habitudes = (function () {
     const date = Utils.parseDateKey(trackDayKey);
     els.trackLabel.textContent = Utils.formatDayLabel(date);
 
-    const [habits, day] = await Promise.all([getHabitsList(), getDayData(trackDayKey)]);
+    const [habits, day, checksMap] = await Promise.all([getHabitsList(), getDayData(trackDayKey), loadAllDayChecks()]);
     day.habitChecks = day.habitChecks || {};
 
     if (habits.length === 0) {
@@ -122,13 +266,13 @@ const Habitudes = (function () {
       return;
     }
 
-    const scheduled = habits.filter((h) => Utils.isHabitScheduled(h, date));
-    const unscheduled = habits.filter((h) => !Utils.isHabitScheduled(h, date));
+    const scheduled = sortHabitsForTracking(habits.filter((h) => Utils.isHabitScheduled(h, date)), day);
+    const unscheduled = sortHabitsForTracking(habits.filter((h) => !Utils.isHabitScheduled(h, date)), day);
 
     if (scheduled.length === 0) {
       els.trackList.innerHTML = `<li class="empty-msg">${T.noHabitsToday}</li>`;
     } else {
-      renderHabitCheckboxRows(els.trackList, scheduled, day, trackDayKey);
+      renderHabitCheckboxRows(els.trackList, scheduled, day, trackDayKey, checksMap);
     }
 
     if (unscheduled.length === 0) {
@@ -136,15 +280,81 @@ const Habitudes = (function () {
     } else {
       els.trackUnscheduledDetails.hidden = false;
       els.trackUnscheduledSummary.textContent = `${T.unscheduledToday} (${unscheduled.length})`;
-      renderHabitCheckboxRows(els.trackUnscheduledList, unscheduled, day, trackDayKey);
+      renderHabitCheckboxRows(els.trackUnscheduledList, unscheduled, day, trackDayKey, checksMap);
     }
+  }
+
+  // ----- الاستمرارية: بطاقة لكل عادة (السلسلة الحالية، الرقم القياسي، العتبة التالية، الأوسمة) -----
+  async function renderStreaks() {
+    const habits = await getHabitsList();
+    els.streaksList.innerHTML = "";
+    if (habits.length === 0) {
+      els.streaksList.innerHTML = `<p class="empty-msg">${T.noHabits}</p>`;
+      return;
+    }
+    const checksMap = await loadAllDayChecks();
+    const todayKey = Utils.todayKey();
+    const order = { high: 0, medium: 1, normal: 2, low: 3 };
+
+    const rows = habits.map((h) => {
+      const priority = Utils.habitPriority(h);
+      const { current, best } = Utils.computeHabitStreak(h, checksMap, todayKey);
+      return { habit: h, priority, current, best };
+    });
+    rows.sort((a, b) => order[a.priority] - order[b.priority] || b.current - a.current);
+
+    rows.forEach(({ habit, priority, current, best }) => {
+      const card = document.createElement("div");
+      card.className = "streak-card priority-" + priority;
+
+      const head = document.createElement("div");
+      head.className = "streak-card-head";
+      const nameEl = document.createElement("span");
+      nameEl.className = "streak-card-name";
+      nameEl.textContent = (priority === "high" ? T.priorityBadgeHigh + " " : "") + habit.name;
+      const numbers = document.createElement("span");
+      numbers.className = "streak-card-numbers";
+      numbers.innerHTML = `<span class="streak-card-current">🔥 <bdi>${current}</bdi></span><span class="streak-card-best">${T.streakBest}: <bdi>${best}</bdi></span>`;
+      head.appendChild(nameEl);
+      head.appendChild(numbers);
+      card.appendChild(head);
+
+      const next = Utils.nextHabitMilestone(current);
+      if (next) {
+        const pct = Math.max(0, Math.min(100, Math.round((current / next) * 100)));
+        const label = document.createElement("div");
+        label.className = "streak-progress-label";
+        label.innerHTML = `<span><bdi>${current}/${next}</bdi></span>`;
+        card.appendChild(label);
+        const bar = document.createElement("div");
+        bar.className = "progress-bar";
+        bar.innerHTML = `<div class="progress-bar-fill" style="width:${pct}%"></div>`;
+        card.appendChild(bar);
+      }
+
+      const achieved = Utils.achievedHabitMilestones(best);
+      if (achieved.length > 0) {
+        const badges = document.createElement("div");
+        badges.className = "streak-badges";
+        achieved.forEach((m) => {
+          const b = document.createElement("span");
+          b.className = "streak-badge";
+          b.textContent = `${m} ${T.streakDaysUnit}`;
+          badges.appendChild(b);
+        });
+        card.appendChild(badges);
+      }
+
+      els.streaksList.appendChild(card);
+    });
   }
 
   async function renderProgress() {
     const habits = await getHabitsList();
     const elapsed = elapsedDaysInMonth();
-    const year = current.getFullYear();
-    const month = current.getMonth();
+    const monthDate = statsMonthDate();
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
 
     els.progressList.innerHTML = "";
     if (habits.length === 0) {
@@ -180,8 +390,9 @@ const Habitudes = (function () {
 
   async function renderHeatmap() {
     const habits = await getHabitsList();
-    const year = current.getFullYear();
-    const month = current.getMonth();
+    const monthDate = statsMonthDate();
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
     const totalDays = Utils.daysInMonth(year, month);
     const todayKey = Utils.todayKey();
 
@@ -192,6 +403,7 @@ const Habitudes = (function () {
     }
 
     for (const h of habits) {
+      const priority = Utils.habitPriority(h);
       const row = document.createElement("div");
       row.className = "heatmap-row";
       const label = document.createElement("div");
@@ -217,10 +429,15 @@ const Habitudes = (function () {
           const scheduled = Utils.isHabitScheduled(h, dateObj);
           let cls = "heatmap-cell";
           if (done) cls += " done";
+          else if (priority === "high") cls += " missed-critical";
           else if (scheduled) cls += " scheduled-empty";
           else cls += " unscheduled";
           cell.className = cls;
-          cell.addEventListener("click", () => toggleHabitDay(h.id, key));
+          // النقر يختار هذا اليوم في "تتبع اليوم" بالإضافة إلى تبديل تأشيره
+          cell.addEventListener("click", () => {
+            trackDayKey = key;
+            toggleHabitDay(h.id, key);
+          });
         }
         cells.appendChild(cell);
       }
@@ -232,8 +449,9 @@ const Habitudes = (function () {
 
   async function renderTrend() {
     const habits = await getHabitsList();
-    const year = current.getFullYear();
-    const month = current.getMonth();
+    const monthDate = statsMonthDate();
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
     const totalDays = Utils.daysInMonth(year, month);
     const elapsed = elapsedDaysInMonth();
 

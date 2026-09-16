@@ -208,10 +208,16 @@
     Auth.showLoginScreen();
   }
 
+  // ملاحظة مهمة: onAuthStateChange يُستدعى في كل حدث (بما فيه TOKEN_REFRESHED الدوري)
+  // وليس فقط عند تسجيل الدخول/الخروج الفعليين. نتحقق من appStarted لتفادي إعادة
+  // تشغيل startApp (وبالتالي init/cacheEls/bindEvents) في كل مرة يتجدد فيها الرمز،
+  // وهو ما كان يسبب تكرار عناصر DOM ومستمعي الأحداث المضافين ديناميكيا.
   async function handleAuthChange(user) {
     if (user) {
-      appStarted = true;
-      await startApp(user);
+      if (!appStarted) {
+        appStarted = true;
+        await startApp(user);
+      }
     } else if (appStarted) {
       appStarted = false;
       stopApp();

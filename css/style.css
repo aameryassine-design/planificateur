@@ -16,6 +16,13 @@
   --danger: #B5562F;
   --radius: 10px;
   --shadow: 0 1px 3px rgba(34, 37, 42, 0.08), 0 1px 2px rgba(34, 37, 42, 0.06);
+
+  /* مستويات أهمية العادات */
+  --priority-high: #B23A3A;
+  --priority-high-bg: #F7E1E1;
+  --priority-medium: #B5562F;
+  --priority-normal: #9A988E;
+  --priority-low: #D3D1C6;
 }
 
 * { box-sizing: border-box; }
@@ -555,8 +562,9 @@ bdi { unicode-bidi: isolate; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4rem 0.2rem;
+  padding: 0.4rem 0.2rem 0.4rem 0.4rem;
   border-block-end: 1px solid var(--line);
+  border-inline-start: 4px solid transparent;
 }
 .habit-mini-row:last-child { border-block-end: none; }
 .habit-mini-row > .h-name { flex: 1; }
@@ -573,9 +581,31 @@ bdi { unicode-bidi: isolate; }
   font-size: 0.75rem;
   color: var(--ink-soft);
 }
+.habit-mini-row .h-streak {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
 
-/* اختيار تكرار العادة (كل يوم / أيام محددة) */
-.freq-toggle { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+/* بادئة الأهمية: شريط ملون على البداية المنطقية (يمين في RTL) */
+.habit-mini-row.priority-high, .streak-card.priority-high { border-inline-start-color: var(--priority-high); }
+.habit-mini-row.priority-medium, .streak-card.priority-medium { border-inline-start-color: var(--priority-medium); }
+.habit-mini-row.priority-normal, .streak-card.priority-normal { border-inline-start-color: var(--priority-normal); }
+.habit-mini-row.priority-low, .streak-card.priority-low { border-inline-start-color: var(--priority-low); }
+
+.priority-badge-high {
+  color: var(--priority-high);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* اختيار تكرار العادة (كل يوم / أيام محددة) وأهميتها */
+.freq-toggle, .priority-toggle { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.hint-text {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 0.3rem 0 0;
+}
 
 /* بنك أزرار أيام الأسبوع القابلة للتبديل (تكرار عادة) */
 .day-toggle-group {
@@ -615,6 +645,116 @@ bdi { unicode-bidi: isolate; }
 .unscheduled-details summary::marker { content: ""; }
 .unscheduled-details summary::before { content: "▸ "; }
 .unscheduled-details[open] summary::before { content: "▾ "; }
+
+/* قسم "إدارة العادات" القابل للطي (صفحة الأسبوع) */
+.habit-manage-details {
+  margin-block-start: 0.75rem;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 0.4rem;
+}
+.habit-manage-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.95rem;
+  padding: 0.3rem 0.2rem;
+  list-style: none;
+}
+.habit-manage-details summary::-webkit-details-marker { display: none; }
+.habit-manage-details summary::marker { content: ""; }
+.habit-manage-details summary::before { content: "▸ "; color: var(--ink-soft); }
+.habit-manage-details[open] summary::before { content: "▾ "; }
+
+/* عرض أكثر إحكاما لقائمة إدارة العادات: اسم + تكرار + أهمية في سطر واحد، أزرار أصغر */
+.habit-mini-list-compact .habit-mini-row { padding-block: 0.3rem; gap: 0.4rem; }
+.habit-mini-list-compact .h-info {
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.5rem;
+}
+.habit-mini-list-compact .h-name { font-size: 0.9rem; }
+.habit-mini-list-compact .h-freq { font-size: 0.72rem; }
+.habit-mini-list-compact .btn,
+.habit-mini-list-compact .btn-danger {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+/* ===== الاستمرارية ===== */
+.streak-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--priority-normal);
+  background: #fff;
+  border-radius: var(--radius);
+  margin-block-end: 0.6rem;
+}
+.streak-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.streak-card-name { font-weight: 600; }
+.streak-card-numbers { display: flex; gap: 0.6rem; align-items: baseline; font-size: 0.85rem; }
+.streak-card-current { font-family: "Noto Kufi Arabic"; color: var(--c-habit); font-size: 1rem; }
+.streak-card-best { color: var(--ink-soft); }
+.streak-progress-label {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+}
+.streak-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.streak-badge {
+  background: var(--c-habit-bg);
+  color: var(--c-habit);
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* ===== تنبيه العادات المهمة جدًا الفائتة ===== */
+.missed-warning { border-color: var(--priority-high); }
+.missed-warning .panel-header h2 { color: var(--priority-high); }
+
+/* ===== رسالة تهنئة عابرة ===== */
+.habit-toast {
+  position: fixed;
+  bottom: 1.2rem;
+  inset-inline: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 250;
+  pointer-events: none;
+}
+.habit-toast-inner {
+  background: var(--c-habit);
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  animation: habit-toast-fade 3s ease forwards;
+}
+@keyframes habit-toast-fade {
+  0% { opacity: 0; transform: translateY(10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.stats-month-label {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
 
 /* ===== صفحة العادات ===== */
 .habit-progress-row {
@@ -681,6 +821,8 @@ bdi { unicode-bidi: isolate; }
 .heatmap-cell.scheduled-empty { background: #fff; border-color: var(--c-habit); }
 /* غير مبرمج: مطفأ اللون */
 .heatmap-cell.unscheduled { background: var(--line); opacity: 0.45; }
+/* يوم فائت لعادة مهمة جدًا */
+.heatmap-cell.missed-critical { background: var(--priority-high-bg); border-color: var(--priority-high); }
 /* يوم مستقبلي: منقّط شفاف كما كان */
 .heatmap-cell.future { background: transparent; border: 1px dashed var(--line); cursor: default; }
 .heatmap-cell:not(.future):hover { outline: 2px solid var(--c-habit); outline-offset: 1px; }

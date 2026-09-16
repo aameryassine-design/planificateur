@@ -5,6 +5,7 @@ const Semaine = (function () {
   const PX_PER_HOUR = 48;
   const AGENDA_MOBILE_WIDTH = 768; // تحت هذا العرض: عمود يوم واحد فقط في الأجندة افتراضيا
   const TINY_LABEL_WIDTH = 480; // تحت هذا العرض: أسماء الأيام المختصرة جدا
+  const HABIT_MANAGE_OPEN_KEY = "mukhattat:ui:habit-manage-open"; // تفضيل محلي بحت، لا يمر عبر Storage/المزامنة
 
   function isAgendaMobile() {
     return window.innerWidth < AGENDA_MOBILE_WIDTH;
@@ -22,7 +23,9 @@ const Semaine = (function () {
   let currentView = "list"; // 'list' | 'agenda'
   let agendaMobileFullWeek = false; // حالة زر "أسبوع" على الهاتف
   let addHabitFreqType = "daily"; // حالة نموذج إضافة عادة: 'daily' | 'days'
+  let addHabitPriority = "normal"; // حالة نموذج إضافة عادة: أهمية العادة
   let addHabitDaysToggle = null; // مكوّن أزرار أيام الأسبوع لنموذج الإضافة
+  let eventsBound = false; // يمنع ربط الأحداث أكثر من مرة إن استُدعي init مجددا
 
   let els = {};
 
@@ -96,7 +99,7 @@ const Semaine = (function () {
     return merged;
   }
 
-  // ===== أدوات مشتركة لتكرار العادات (تُستعمل في نموذج الإضافة ونافذة التعديل) =====
+  // ===== أدوات مشتركة لتكرار وأهمية العادات (تُستعمل في نموذج الإضافة ونافذة التعديل) =====
   // ينشئ بنك 7 أزرار أيام قابلة للتبديل بترتيب RTL (الإثنين يمينا)
   function createDayToggleGroup(initialDays) {
     const selected = new Set(initialDays || []);
@@ -126,6 +129,9 @@ const Semaine = (function () {
       }
     };
   }
+
+  const PRIORITY_ORDER = Utils.HABIT_PRIORITY_ORDER;
+  const priorityLabel = Utils.habitPriorityLabel;
 
   // نص تكرار العادة المعروض في القائمة: "كل يوم" أو أسماء الأيام المختارة
   function formatHabitFrequency(habit) {
@@ -174,14 +180,30 @@ const Semaine = (function () {
       habitFreqToggle: document.getElementById("habit-freq-toggle"),
       habitDaysRow: document.getElementById("habit-days-row"),
       habitDaysToggleContainer: document.getElementById("habit-days-toggle"),
-      habitMiniList: document.getElementById("habit-mini-list")
+      habitPriorityToggle: document.getElementById("habit-priority-toggle"),
+      habitPriorityHint: document.getElementById("habit-priority-hint"),
+      habitMiniList: document.getElementById("habit-mini-list"),
+      habitManageDetails: document.getElementById("habit-manage-details"),
+      habitManageSummary: document.getElementById("habit-manage-summary")
     };
 
+    // مُضمَّن حماية: نفرّغ الحاوية دائما قبل إنشاء بنك الأيام حتى لو أُعيد استدعاء cacheEls
+    els.habitDaysToggleContainer.innerHTML = "";
     addHabitDaysToggle = createDayToggleGroup([]);
     els.habitDaysToggleContainer.appendChild(addHabitDaysToggle.el);
+
+    // استرجاع حالة طي/فتح قائمة إدارة العادات من تفضيل محلي بحت (بدون مزامنة)
+    const savedOpen = localStorage.getItem(HABIT_MANAGE_OPEN_KEY);
+    els.habitManageDetails.open = savedOpen === "1";
+    els.habitManageDetails.addEventListener("toggle", () => {
+      localStorage.setItem(HABIT_MANAGE_OPEN_KEY, els.habitManageDetails.open ? "1" : "0");
+    });
   }
 
   function bindEvents() {
+    if (eventsBound) return; // حماية من ازدواج الاستماع لو استُدعيت init أكثر من مرة
+    eventsBound = true;
+
     document.getElementById("week-prev").addEventListener("click", () => shiftWeek(-1));
     document.getElementById("week-next").addEventListener("click", () => shiftWeek(1));
     document.getElementById("week-today").addEventListener("click", goToday);
@@ -205,6 +227,7 @@ const Semaine = (function () {
 
     els.habitFreqToggle.querySelectorAll("button[data-freq]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (btn.disabled) return;
         addHabitFreqType = btn.dataset.freq;
         els.habitFreqToggle.querySelectorAll("button[data-freq]").forEach((b) => {
           b.classList.toggle("btn-primary", b === btn);
@@ -212,6 +235,31 @@ const Semaine = (function () {
         els.habitDaysRow.hidden = addHabitFreqType !== "days";
       });
     });
+
+    els.habitPriorityToggle.querySelectorAll("button[data-priority]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        addHabitPriority = btn.dataset.priority;
+        els.habitPriorityToggle.querySelectorAll("button[data-priority]").forEach((b) => {
+          b.classList.toggle("btn-primary", b === btn);
+        });
+        applyAddFormForcedDaily();
+      });
+    });
+  }
+
+  // عادة "مهم جدًا" تُفرض عليها فرequency = كل يوم (نموذج الإضافة، بلا تأكيد - لا توجد عادة قائمة لفقدانها)
+  function applyAddFormForcedDaily() {
+    const forced = addHabitPriority === "high";
+    const daysBtn = els.habitFreqToggle.querySelector('button[data-freq="days"]');
+    daysBtn.disabled = forced;
+    els.habitPriorityHint.hidden = !forced;
+    if (forced && addHabitFreqType !== "daily") {
+      addHabitFreqType = "daily";
+      els.habitFreqToggle.querySelectorAll("button[data-freq]").forEach((b) => {
+        b.classList.toggle("btn-primary", b.dataset.freq === "daily");
+      });
+      els.habitDaysRow.hidden = true;
+    }
   }
 
   // ===== تنقل الأسبوع =====
@@ -659,14 +707,20 @@ const Semaine = (function () {
     await renderTasks();
   }
 
-  // ----- العادات (إضافة وحذف وتعديل التكرار؛ التأشير اليومي يتم في صفحة العادات) -----
+  // ----- العادات (إضافة وحذف وتعديل التكرار/الأهمية؛ التأشير اليومي يتم في صفحة العادات) -----
   function resetAddHabitForm() {
     addHabitFreqType = "daily";
+    addHabitPriority = "normal";
     addHabitDaysToggle.setDays([]);
     els.habitDaysRow.hidden = true;
     els.habitFreqToggle.querySelectorAll("button[data-freq]").forEach((b) => {
       b.classList.toggle("btn-primary", b.dataset.freq === "daily");
+      b.disabled = false;
     });
+    els.habitPriorityToggle.querySelectorAll("button[data-priority]").forEach((b) => {
+      b.classList.toggle("btn-primary", b.dataset.priority === "normal");
+    });
+    els.habitPriorityHint.hidden = true;
   }
 
   async function onSubmitHabit(e) {
@@ -685,7 +739,7 @@ const Semaine = (function () {
     hideError(els.habitError);
 
     const list = await getHabitsList();
-    list.push({ id: Utils.uid(), name, schedule });
+    list.push({ id: Utils.uid(), name, schedule, priority: addHabitPriority });
     await saveHabitsList(list);
     els.habitName.value = "";
     resetAddHabitForm();
@@ -694,25 +748,31 @@ const Semaine = (function () {
 
   async function renderHabitsMini() {
     const habits = await getHabitsList();
+    els.habitManageSummary.textContent = `${T.habitManageTitle} (${habits.length})`;
     els.habitMiniList.innerHTML = "";
     if (habits.length === 0) {
       els.habitMiniList.innerHTML = `<li class="empty-msg">${T.noHabits}</li>`;
       return;
     }
     habits.forEach((h) => {
+      const priority = Utils.habitPriority(h);
       const li = document.createElement("li");
-      li.className = "habit-mini-row";
+      li.className = "habit-mini-row priority-" + priority;
 
       const info = document.createElement("div");
       info.className = "h-info";
       const nameSpan = document.createElement("span");
       nameSpan.className = "h-name";
-      nameSpan.textContent = h.name;
+      nameSpan.textContent = (priority === "high" ? T.priorityBadgeHigh + " " : "") + h.name;
       const freqSpan = document.createElement("span");
       freqSpan.className = "h-freq";
       freqSpan.textContent = formatHabitFrequency(h);
+      const prioritySpan = document.createElement("span");
+      prioritySpan.className = "h-freq";
+      prioritySpan.textContent = priorityLabel(priority);
       info.appendChild(nameSpan);
       info.appendChild(freqSpan);
+      info.appendChild(prioritySpan);
       li.appendChild(info);
 
       const editBtn = document.createElement("button");
@@ -725,14 +785,14 @@ const Semaine = (function () {
       const delBtn = document.createElement("button");
       delBtn.className = "btn-danger";
       delBtn.textContent = T.delete;
-      delBtn.addEventListener("click", () => confirmDeleteHabit(h.id));
+      delBtn.addEventListener("click", () => confirmDeleteHabit(h));
       li.appendChild(delBtn);
 
       els.habitMiniList.appendChild(li);
     });
   }
 
-  // ----- تعديل عادة (الاسم والتكرار) -----
+  // ----- تعديل عادة (الاسم والتكرار والأهمية) -----
   function openEditHabitModal(habit) {
     const body = document.createElement("div");
     const errEl = document.createElement("div");
@@ -749,6 +809,7 @@ const Semaine = (function () {
     nameField.appendChild(nameInput);
     body.appendChild(nameField);
 
+    // ----- تكرار -----
     const freqWrap = document.createElement("div");
     freqWrap.className = "freq-toggle";
     freqWrap.style.marginTop = "0.6rem";
@@ -772,16 +833,107 @@ const Semaine = (function () {
     daysRow.appendChild(dayToggle.el);
     body.appendChild(daysRow);
 
+    // ----- أهمية -----
+    const priorityWrap = document.createElement("div");
+    priorityWrap.className = "priority-toggle";
+    priorityWrap.style.marginTop = "0.6rem";
+    const priorityBtns = {};
+    PRIORITY_ORDER.forEach((p) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn btn-sm";
+      b.textContent = priorityLabel(p);
+      priorityBtns[p] = b;
+      priorityWrap.appendChild(b);
+    });
+    body.appendChild(priorityWrap);
+
+    const priorityHint = document.createElement("p");
+    priorityHint.className = "hint-text";
+    priorityHint.textContent = T.freqForcedDaily;
+    priorityHint.hidden = true;
+    body.appendChild(priorityHint);
+
+    // ----- تأكيد مضمَّن (بدل نافذة متداخلة) لتغييرات حساسة -----
+    const inlineConfirm = document.createElement("div");
+    inlineConfirm.className = "hint-text";
+    inlineConfirm.style.cssText = "background:var(--priority-high-bg);color:var(--priority-high);padding:0.5rem;border-radius:8px;margin-top:0.5rem;";
+    inlineConfirm.hidden = true;
+    const inlineConfirmText = document.createElement("p");
+    inlineConfirmText.style.margin = "0 0 0.4rem";
+    const inlineConfirmYes = document.createElement("button");
+    inlineConfirmYes.type = "button";
+    inlineConfirmYes.className = "btn btn-sm btn-primary";
+    inlineConfirmYes.textContent = T.confirm;
+    const inlineConfirmNo = document.createElement("button");
+    inlineConfirmNo.type = "button";
+    inlineConfirmNo.className = "btn btn-sm";
+    inlineConfirmNo.textContent = T.cancel;
+    inlineConfirm.appendChild(inlineConfirmText);
+    inlineConfirm.appendChild(inlineConfirmYes);
+    inlineConfirm.appendChild(inlineConfirmNo);
+    body.appendChild(inlineConfirm);
+
+    function showInlineConfirm(message, onYes) {
+      inlineConfirmText.textContent = message;
+      inlineConfirm.hidden = false;
+      const yesHandler = () => {
+        inlineConfirm.hidden = true;
+        cleanup();
+        onYes();
+      };
+      const noHandler = () => {
+        inlineConfirm.hidden = true;
+        cleanup();
+      };
+      function cleanup() {
+        inlineConfirmYes.removeEventListener("click", yesHandler);
+        inlineConfirmNo.removeEventListener("click", noHandler);
+      }
+      inlineConfirmYes.addEventListener("click", yesHandler);
+      inlineConfirmNo.addEventListener("click", noHandler);
+    }
+
     let currentType = initialType;
-    function setActive(type) {
+    function setFreqActive(type) {
       currentType = type;
       dailyBtn.classList.toggle("btn-primary", type === "daily");
       daysBtn.classList.toggle("btn-primary", type === "days");
       daysRow.hidden = type !== "days";
     }
-    setActive(initialType);
-    dailyBtn.addEventListener("click", () => setActive("daily"));
-    daysBtn.addEventListener("click", () => setActive("days"));
+    setFreqActive(initialType);
+    dailyBtn.addEventListener("click", () => setFreqActive("daily"));
+    daysBtn.addEventListener("click", () => {
+      if (daysBtn.disabled) return;
+      setFreqActive("days");
+    });
+
+    const initialPriority = Utils.habitPriority(habit);
+    let currentPriority = initialPriority;
+    function applyPriority(p) {
+      currentPriority = p;
+      PRIORITY_ORDER.forEach((k) => priorityBtns[k].classList.toggle("btn-primary", k === p));
+      const forced = p === "high";
+      daysBtn.disabled = forced;
+      priorityHint.hidden = !forced;
+      if (forced) setFreqActive("daily");
+    }
+    applyPriority(initialPriority);
+
+    PRIORITY_ORDER.forEach((p) => {
+      priorityBtns[p].addEventListener("click", () => {
+        if (p === currentPriority) return;
+        if (p === "high" && currentType === "days") {
+          showInlineConfirm(T.confirmForceDailyMessage, () => applyPriority(p));
+          return;
+        }
+        if (initialPriority === "high" && p !== "high") {
+          showInlineConfirm(T.confirmDowngradeImportant, () => applyPriority(p));
+          return;
+        }
+        applyPriority(p);
+      });
+    });
 
     body.appendChild(errEl);
 
@@ -808,6 +960,7 @@ const Semaine = (function () {
       if (item) {
         item.name = name;
         item.schedule = schedule;
+        item.priority = currentPriority;
       }
       await saveHabitsList(list);
       Modal.close();
@@ -822,16 +975,18 @@ const Semaine = (function () {
     });
   }
 
-  function confirmDeleteHabit(habitId) {
-    Modal.confirm(T.confirmDeleteHabit, async () => {
+  function confirmDeleteHabit(habit) {
+    const isHigh = Utils.habitPriority(habit) === "high";
+    const message = isHigh ? T.confirmDowngradeImportant : T.confirmDeleteHabit;
+    Modal.confirm(message, async () => {
       const list = await getHabitsList();
-      await saveHabitsList(list.filter((h) => h.id !== habitId));
+      await saveHabitsList(list.filter((h) => h.id !== habit.id));
       // تنظيف السجلات المرتبطة بهذه العادة في كل الأيام
       const dayKeys = await Storage.list("day:");
       for (const key of dayKeys) {
         const day = await Storage.get(key, null);
-        if (day && day.habitChecks && day.habitChecks[habitId] !== undefined) {
-          delete day.habitChecks[habitId];
+        if (day && day.habitChecks && day.habitChecks[habit.id] !== undefined) {
+          delete day.habitChecks[habit.id];
           await Storage.set(key, day);
         }
       }

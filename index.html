@@ -165,10 +165,22 @@
               <div class="day-toggle-group" id="habit-days-toggle"></div>
             </div>
             <div class="form-row">
+              <div class="priority-toggle" id="habit-priority-toggle">
+                <button type="button" class="btn btn-sm" data-priority="high">مهم جدًا</button>
+                <button type="button" class="btn btn-sm" data-priority="medium">مهم</button>
+                <button type="button" class="btn btn-sm btn-primary" data-priority="normal">عادي</button>
+                <button type="button" class="btn btn-sm" data-priority="low">ثانوي</button>
+              </div>
+            </div>
+            <p class="hint-text" id="habit-priority-hint" hidden>العادات المهمة جدًا تكون كل يوم</p>
+            <div class="form-row">
               <button type="submit" class="btn btn-primary">إضافة عادة</button>
             </div>
           </form>
-          <ul id="habit-mini-list" class="list"></ul>
+          <details class="habit-manage-details" id="habit-manage-details">
+            <summary id="habit-manage-summary">إدارة العادات</summary>
+            <ul id="habit-mini-list" class="list habit-mini-list-compact"></ul>
+          </details>
         </div>
       </div>
 
@@ -186,6 +198,11 @@
 
     <!-- ===== صفحة العادات ===== -->
     <section id="view-habits" class="view">
+      <div class="panel missed-warning" id="habits-missed-panel" hidden>
+        <div class="panel-header"><h2>تنبيهات</h2></div>
+        <ul id="habits-missed-list" class="list"></ul>
+      </div>
+
       <div class="panel" id="panel-today-tracking">
         <div class="panel-header"><h2>تتبع اليوم</h2></div>
         <div class="week-nav">
@@ -201,12 +218,12 @@
         </details>
       </div>
 
-      <div class="week-nav">
-        <button id="habits-month-prev" class="btn btn-icon" title="السابق">›</button>
-        <span id="habits-month-label" class="week-range"></span>
-        <button id="habits-month-next" class="btn btn-icon" title="التالي">‹</button>
-        <button id="habits-month-today" class="btn btn-sm">هذا الشهر</button>
+      <div class="panel" id="panel-streaks">
+        <div class="panel-header"><h2>الاستمرارية</h2></div>
+        <div id="habits-streaks-list"></div>
       </div>
+
+      <h3 id="stats-month-label" class="stats-month-label"></h3>
 
       <div class="panel">
         <div class="panel-header"><h2>التقدم</h2></div>
