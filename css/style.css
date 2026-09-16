@@ -559,7 +559,62 @@ bdi { unicode-bidi: isolate; }
   border-block-end: 1px solid var(--line);
 }
 .habit-mini-row:last-child { border-block-end: none; }
-.habit-mini-row .h-name { flex: 1; }
+.habit-mini-row > .h-name { flex: 1; }
+
+.habit-mini-row .h-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.habit-mini-row .h-info .h-name { overflow-wrap: break-word; }
+.habit-mini-row .h-freq {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+/* اختيار تكرار العادة (كل يوم / أيام محددة) */
+.freq-toggle { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+/* بنك أزرار أيام الأسبوع القابلة للتبديل (تكرار عادة) */
+.day-toggle-group {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.day-toggle-btn {
+  flex: 1 1 0;
+  min-width: 40px;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.2rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.day-toggle-btn.active {
+  background: var(--c-habit);
+  border-color: var(--c-habit);
+  color: #fff;
+}
+
+/* قسم "غير مبرمجة اليوم" القابل للطي */
+.unscheduled-details { margin-block-start: 0.5rem; }
+.unscheduled-details summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  padding: 0.4rem 0.2rem;
+  list-style: none;
+}
+.unscheduled-details summary::-webkit-details-marker { display: none; }
+.unscheduled-details summary::marker { content: ""; }
+.unscheduled-details summary::before { content: "▸ "; }
+.unscheduled-details[open] summary::before { content: "▾ "; }
 
 /* ===== صفحة العادات ===== */
 .habit-progress-row {
@@ -613,12 +668,20 @@ bdi { unicode-bidi: isolate; }
 .heatmap-cell {
   width: 16px;
   height: 16px;
+  box-sizing: border-box;
   border-radius: 3px;
-  background: var(--line);
+  background: transparent;
+  border: 1px solid transparent;
   flex: none;
   cursor: pointer;
 }
-.heatmap-cell.done { background: var(--c-habit); }
+/* مبرمج ومنجز */
+.heatmap-cell.done { background: var(--c-habit); border-color: var(--c-habit); }
+/* مبرمج وغير منجز: فارغ بحدود ملونة */
+.heatmap-cell.scheduled-empty { background: #fff; border-color: var(--c-habit); }
+/* غير مبرمج: مطفأ اللون */
+.heatmap-cell.unscheduled { background: var(--line); opacity: 0.45; }
+/* يوم مستقبلي: منقّط شفاف كما كان */
 .heatmap-cell.future { background: transparent; border: 1px dashed var(--line); cursor: default; }
 .heatmap-cell:not(.future):hover { outline: 2px solid var(--c-habit); outline-offset: 1px; }
 
@@ -770,6 +833,7 @@ bdi { unicode-bidi: isolate; }
   }
   .btn-sm { min-height: 40px; padding: 0.4rem 0.7rem; }
   .day-tab { min-height: 44px; }
+  .day-toggle-btn { min-height: 44px; }
   .field input, .field select, .field textarea { min-height: 44px; }
   input[type="checkbox"] { width: 20px; height: 20px; flex: none; }
 

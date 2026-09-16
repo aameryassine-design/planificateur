@@ -147,12 +147,26 @@
           <div class="panel-header">
             <h2>العادات</h2>
           </div>
-          <form id="habit-add-form" class="form-row">
-            <div class="field" style="flex:2 1 160px">
-              <label for="habit-name">اسم العادة</label>
-              <input type="text" id="habit-name">
+          <form id="habit-add-form">
+            <div class="form-error" id="habit-error"></div>
+            <div class="form-row">
+              <div class="field" style="flex:2 1 160px">
+                <label for="habit-name">اسم العادة</label>
+                <input type="text" id="habit-name">
+              </div>
             </div>
-            <button type="submit" class="btn btn-primary">إضافة عادة</button>
+            <div class="form-row">
+              <div class="freq-toggle" id="habit-freq-toggle">
+                <button type="button" class="btn btn-sm btn-primary" data-freq="daily">كل يوم</button>
+                <button type="button" class="btn btn-sm" data-freq="days">أيام محددة</button>
+              </div>
+            </div>
+            <div class="form-row" id="habit-days-row" hidden>
+              <div class="day-toggle-group" id="habit-days-toggle"></div>
+            </div>
+            <div class="form-row">
+              <button type="submit" class="btn btn-primary">إضافة عادة</button>
+            </div>
           </form>
           <ul id="habit-mini-list" class="list"></ul>
         </div>
@@ -181,6 +195,10 @@
           <button id="track-today" class="btn btn-sm">اليوم</button>
         </div>
         <ul id="track-list" class="list"></ul>
+        <details class="unscheduled-details" id="track-unscheduled" hidden>
+          <summary id="track-unscheduled-summary">غير مبرمجة اليوم</summary>
+          <ul id="track-unscheduled-list" class="list"></ul>
+        </details>
       </div>
 
       <div class="week-nav">

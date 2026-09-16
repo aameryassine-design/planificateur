@@ -34,7 +34,10 @@ const Habitudes = (function () {
       trend: document.getElementById("habits-trend"),
 
       trackLabel: document.getElementById("track-label"),
-      trackList: document.getElementById("track-list")
+      trackList: document.getElementById("track-list"),
+      trackUnscheduledDetails: document.getElementById("track-unscheduled"),
+      trackUnscheduledSummary: document.getElementById("track-unscheduled-summary"),
+      trackUnscheduledList: document.getElementById("track-unscheduled-list")
     };
   }
 
@@ -87,7 +90,25 @@ const Habitudes = (function () {
     await renderTrend();
   }
 
-  // ----- تتبع اليوم: تأشير العادات ليوم محدد -----
+  // ----- تتبع اليوم: تأشير العادات ليوم محدد، مع فصل المبرمجة عن غير المبرمجة -----
+  function renderHabitCheckboxRows(container, habitsList, day, dateKey) {
+    container.innerHTML = "";
+    habitsList.forEach((h) => {
+      const li = document.createElement("li");
+      li.className = "habit-mini-row";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!day.habitChecks[h.id];
+      cb.addEventListener("change", () => toggleHabitDay(h.id, dateKey));
+      li.appendChild(cb);
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "h-name";
+      nameSpan.textContent = h.name;
+      li.appendChild(nameSpan);
+      container.appendChild(li);
+    });
+  }
+
   async function renderTodayTracking() {
     const date = Utils.parseDateKey(trackDayKey);
     els.trackLabel.textContent = Utils.formatDayLabel(date);
@@ -95,25 +116,28 @@ const Habitudes = (function () {
     const [habits, day] = await Promise.all([getHabitsList(), getDayData(trackDayKey)]);
     day.habitChecks = day.habitChecks || {};
 
-    els.trackList.innerHTML = "";
     if (habits.length === 0) {
       els.trackList.innerHTML = `<li class="empty-msg">${T.noHabits}</li>`;
+      els.trackUnscheduledDetails.hidden = true;
       return;
     }
-    habits.forEach((h) => {
-      const li = document.createElement("li");
-      li.className = "habit-mini-row";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = !!day.habitChecks[h.id];
-      cb.addEventListener("change", () => toggleHabitDay(h.id, trackDayKey));
-      li.appendChild(cb);
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "h-name";
-      nameSpan.textContent = h.name;
-      li.appendChild(nameSpan);
-      els.trackList.appendChild(li);
-    });
+
+    const scheduled = habits.filter((h) => Utils.isHabitScheduled(h, date));
+    const unscheduled = habits.filter((h) => !Utils.isHabitScheduled(h, date));
+
+    if (scheduled.length === 0) {
+      els.trackList.innerHTML = `<li class="empty-msg">${T.noHabitsToday}</li>`;
+    } else {
+      renderHabitCheckboxRows(els.trackList, scheduled, day, trackDayKey);
+    }
+
+    if (unscheduled.length === 0) {
+      els.trackUnscheduledDetails.hidden = true;
+    } else {
+      els.trackUnscheduledDetails.hidden = false;
+      els.trackUnscheduledSummary.textContent = `${T.unscheduledToday} (${unscheduled.length})`;
+      renderHabitCheckboxRows(els.trackUnscheduledList, unscheduled, day, trackDayKey);
+    }
   }
 
   async function renderProgress() {
@@ -129,20 +153,24 @@ const Habitudes = (function () {
     }
 
     for (const h of habits) {
-      let count = 0;
+      let scheduledCount = 0;
+      let doneCount = 0;
       for (let d = 1; d <= elapsed; d++) {
-        const key = Utils.dateKey(new Date(year, month, d));
+        const dateObj = new Date(year, month, d);
+        if (!Utils.isHabitScheduled(h, dateObj)) continue;
+        scheduledCount++;
+        const key = Utils.dateKey(dateObj);
         const day = await getDayData(key);
-        if (day.habitChecks && day.habitChecks[h.id]) count++;
+        if (day.habitChecks && day.habitChecks[h.id]) doneCount++;
       }
-      const pct = elapsed > 0 ? Math.round((count / elapsed) * 100) : 0;
+      const pct = scheduledCount > 0 ? Math.round((doneCount / scheduledCount) * 100) : 0;
 
       const row = document.createElement("div");
       row.className = "habit-progress-row";
       row.innerHTML = `
         <div class="hp-top">
           <span>${Utils.escapeHtml(h.name)}</span>
-          <span><bdi>${count}/${elapsed}</bdi> (${pct}%)</span>
+          <span><bdi>${doneCount}/${scheduledCount}</bdi> (${pct}%)</span>
         </div>
         <div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
       `;
@@ -176,7 +204,8 @@ const Habitudes = (function () {
       const cells = document.createElement("div");
       cells.className = "heatmap-cells";
       for (let d = 1; d <= totalDays; d++) {
-        const key = Utils.dateKey(new Date(year, month, d));
+        const dateObj = new Date(year, month, d);
+        const key = Utils.dateKey(dateObj);
         const cell = document.createElement("div");
         cell.title = String(d);
         const isFuture = key > todayKey;
@@ -185,7 +214,12 @@ const Habitudes = (function () {
         } else {
           const day = await getDayData(key);
           const done = !!(day.habitChecks && day.habitChecks[h.id]);
-          cell.className = "heatmap-cell" + (done ? " done" : "");
+          const scheduled = Utils.isHabitScheduled(h, dateObj);
+          let cls = "heatmap-cell";
+          if (done) cls += " done";
+          else if (scheduled) cls += " scheduled-empty";
+          else cls += " unscheduled";
+          cell.className = cls;
           cell.addEventListener("click", () => toggleHabitDay(h.id, key));
         }
         cells.appendChild(cell);
@@ -220,12 +254,20 @@ const Habitudes = (function () {
 
     const points = [];
     for (let d = 1; d <= elapsed; d++) {
-      const key = Utils.dateKey(new Date(year, month, d));
+      const dateObj = new Date(year, month, d);
+      const scheduledHabits = habits.filter((h) => Utils.isHabitScheduled(h, dateObj));
+      if (scheduledHabits.length === 0) continue; // لا عادات مبرمجة هذا اليوم: نتخطاه فلا تهبط المنحنى إلى 0
+      const key = Utils.dateKey(dateObj);
       const day = await getDayData(key);
       const checks = day.habitChecks || {};
-      const doneCount = habits.filter((h) => checks[h.id]).length;
-      const pct = habits.length > 0 ? (doneCount / habits.length) * 100 : 0;
+      const doneCount = scheduledHabits.filter((h) => checks[h.id]).length;
+      const pct = (doneCount / scheduledHabits.length) * 100;
       points.push({ day: d, pct });
+    }
+
+    if (points.length === 0) {
+      els.trend.innerHTML = `<p class="empty-msg">${T.noTrendData}</p>`;
+      return;
     }
 
     function xForDay(d) {

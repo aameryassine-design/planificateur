@@ -73,6 +73,10 @@ const T = {
   addHabit: "إضافة عادة",
   habitName: "اسم العادة",
   confirmDeleteHabit: "هل تريد حذف هذه العادة؟ سيتم حذف كل سجلاتها.",
+  editHabit: "تعديل العادة",
+  freqDaily: "كل يوم",
+  freqDays: "أيام محددة",
+  errorDaysRequired: "الرجاء اختيار يوم واحد على الأقل",
 
   // صفحة العادات (الشهرية)
   progress: "التقدم",
@@ -81,6 +85,8 @@ const T = {
   daysCompleted: "أيام منجزة",
   ofDaysElapsed: "من الأيام المنقضية",
   noTrendData: "لا توجد بيانات بعد لهذا الشهر",
+  noHabitsToday: "لا توجد عادات مبرمجة لهذا اليوم",
+  unscheduledToday: "غير مبرمجة اليوم",
 
   // صفحة الميزانية
   income: "دخل",

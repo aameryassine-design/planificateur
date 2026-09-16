@@ -80,6 +80,16 @@ const Utils = (function () {
     return `${num.toFixed(2)} ${T.currency}`;
   }
 
+  // هل هذه العادة مبرمجة في هذا التاريخ؟ عادة بدون schedule (بيانات قديمة) = كل يوم
+  function isHabitScheduled(habit, date) {
+    const schedule = habit && habit.schedule;
+    if (!schedule || schedule.type === "daily") return true;
+    if (schedule.type === "days") {
+      return Array.isArray(schedule.days) && schedule.days.includes(weekdayMon0(date));
+    }
+    return true;
+  }
+
   // يتحقق من صيغة الوقت HH:MM
   function isValidTime(str) {
     return /^([01]\d|2[0-3]):([0-5]\d)$/.test(str);
@@ -142,6 +152,7 @@ const Utils = (function () {
     formatMonthLabel,
     monthKey,
     formatAmount,
+    isHabitScheduled,
     isValidTime,
     timeToMinutes,
     debounce,

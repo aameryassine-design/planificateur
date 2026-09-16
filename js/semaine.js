@@ -21,6 +21,8 @@ const Semaine = (function () {
   let selectedDayKey = Utils.todayKey();
   let currentView = "list"; // 'list' | 'agenda'
   let agendaMobileFullWeek = false; // حالة زر "أسبوع" على الهاتف
+  let addHabitFreqType = "daily"; // حالة نموذج إضافة عادة: 'daily' | 'days'
+  let addHabitDaysToggle = null; // مكوّن أزرار أيام الأسبوع لنموذج الإضافة
 
   let els = {};
 
@@ -94,6 +96,46 @@ const Semaine = (function () {
     return merged;
   }
 
+  // ===== أدوات مشتركة لتكرار العادات (تُستعمل في نموذج الإضافة ونافذة التعديل) =====
+  // ينشئ بنك 7 أزرار أيام قابلة للتبديل بترتيب RTL (الإثنين يمينا)
+  function createDayToggleGroup(initialDays) {
+    const selected = new Set(initialDays || []);
+    const el = document.createElement("div");
+    el.className = "day-toggle-group";
+    const buttons = [];
+    for (let i = 0; i < 7; i++) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "day-toggle-btn" + (selected.has(i) ? " active" : "");
+      btn.textContent = T.weekdaysTiny[i];
+      btn.addEventListener("click", () => {
+        if (selected.has(i)) selected.delete(i);
+        else selected.add(i);
+        btn.classList.toggle("active");
+      });
+      buttons.push(btn);
+      el.appendChild(btn);
+    }
+    return {
+      el,
+      getDays: () => Array.from(selected).sort((a, b) => a - b),
+      setDays: (days) => {
+        selected.clear();
+        (days || []).forEach((d) => selected.add(d));
+        buttons.forEach((btn, i) => btn.classList.toggle("active", selected.has(i)));
+      }
+    };
+  }
+
+  // نص تكرار العادة المعروض في القائمة: "كل يوم" أو أسماء الأيام المختارة
+  function formatHabitFrequency(habit) {
+    const schedule = habit.schedule;
+    if (!schedule || schedule.type !== "days") return T.freqDaily;
+    const days = (schedule.days || []).slice().sort((a, b) => a - b);
+    if (days.length === 0) return T.freqDaily;
+    return days.map((d) => T.weekdaysTiny[d]).join("، ");
+  }
+
   // ===== تهيئة عناصر DOM =====
   function cacheEls() {
     els = {
@@ -127,9 +169,16 @@ const Semaine = (function () {
       postponeBtn: document.getElementById("postpone-btn"),
 
       habitAddForm: document.getElementById("habit-add-form"),
+      habitError: document.getElementById("habit-error"),
       habitName: document.getElementById("habit-name"),
+      habitFreqToggle: document.getElementById("habit-freq-toggle"),
+      habitDaysRow: document.getElementById("habit-days-row"),
+      habitDaysToggleContainer: document.getElementById("habit-days-toggle"),
       habitMiniList: document.getElementById("habit-mini-list")
     };
+
+    addHabitDaysToggle = createDayToggleGroup([]);
+    els.habitDaysToggleContainer.appendChild(addHabitDaysToggle.el);
   }
 
   function bindEvents() {
@@ -153,6 +202,16 @@ const Semaine = (function () {
     els.habitAddForm.addEventListener("submit", onSubmitHabit);
     els.postponeBtn.addEventListener("click", onPostponeTasks);
     els.manageCategoriesBtn.addEventListener("click", openCategoryManager);
+
+    els.habitFreqToggle.querySelectorAll("button[data-freq]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        addHabitFreqType = btn.dataset.freq;
+        els.habitFreqToggle.querySelectorAll("button[data-freq]").forEach((b) => {
+          b.classList.toggle("btn-primary", b === btn);
+        });
+        els.habitDaysRow.hidden = addHabitFreqType !== "days";
+      });
+    });
   }
 
   // ===== تنقل الأسبوع =====
@@ -600,15 +659,36 @@ const Semaine = (function () {
     await renderTasks();
   }
 
-  // ----- العادات (إضافة وحذف فقط؛ التأشير يتم في صفحة العادات) -----
+  // ----- العادات (إضافة وحذف وتعديل التكرار؛ التأشير اليومي يتم في صفحة العادات) -----
+  function resetAddHabitForm() {
+    addHabitFreqType = "daily";
+    addHabitDaysToggle.setDays([]);
+    els.habitDaysRow.hidden = true;
+    els.habitFreqToggle.querySelectorAll("button[data-freq]").forEach((b) => {
+      b.classList.toggle("btn-primary", b.dataset.freq === "daily");
+    });
+  }
+
   async function onSubmitHabit(e) {
     e.preventDefault();
     const name = els.habitName.value.trim();
-    if (!name) return;
+    if (!name) return showError(els.habitError, T.errorNameRequired);
+
+    let schedule;
+    if (addHabitFreqType === "days") {
+      const days = addHabitDaysToggle.getDays();
+      if (days.length === 0) return showError(els.habitError, T.errorDaysRequired);
+      schedule = { type: "days", days };
+    } else {
+      schedule = { type: "daily", days: [] };
+    }
+    hideError(els.habitError);
+
     const list = await getHabitsList();
-    list.push({ id: Utils.uid(), name });
+    list.push({ id: Utils.uid(), name, schedule });
     await saveHabitsList(list);
     els.habitName.value = "";
+    resetAddHabitForm();
     await renderHabitsMini();
   }
 
@@ -622,16 +702,123 @@ const Semaine = (function () {
     habits.forEach((h) => {
       const li = document.createElement("li");
       li.className = "habit-mini-row";
+
+      const info = document.createElement("div");
+      info.className = "h-info";
       const nameSpan = document.createElement("span");
       nameSpan.className = "h-name";
       nameSpan.textContent = h.name;
-      li.appendChild(nameSpan);
+      const freqSpan = document.createElement("span");
+      freqSpan.className = "h-freq";
+      freqSpan.textContent = formatHabitFrequency(h);
+      info.appendChild(nameSpan);
+      info.appendChild(freqSpan);
+      li.appendChild(info);
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "btn btn-sm";
+      editBtn.type = "button";
+      editBtn.textContent = T.edit;
+      editBtn.addEventListener("click", () => openEditHabitModal(h));
+      li.appendChild(editBtn);
+
       const delBtn = document.createElement("button");
       delBtn.className = "btn-danger";
       delBtn.textContent = T.delete;
       delBtn.addEventListener("click", () => confirmDeleteHabit(h.id));
       li.appendChild(delBtn);
+
       els.habitMiniList.appendChild(li);
+    });
+  }
+
+  // ----- تعديل عادة (الاسم والتكرار) -----
+  function openEditHabitModal(habit) {
+    const body = document.createElement("div");
+    const errEl = document.createElement("div");
+    errEl.className = "form-error";
+
+    const nameField = document.createElement("div");
+    nameField.className = "field";
+    const nameLabel = document.createElement("label");
+    nameLabel.textContent = T.habitName;
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = habit.name;
+    nameField.appendChild(nameLabel);
+    nameField.appendChild(nameInput);
+    body.appendChild(nameField);
+
+    const freqWrap = document.createElement("div");
+    freqWrap.className = "freq-toggle";
+    freqWrap.style.marginTop = "0.6rem";
+    const dailyBtn = document.createElement("button");
+    dailyBtn.type = "button";
+    dailyBtn.className = "btn btn-sm";
+    dailyBtn.textContent = T.freqDaily;
+    const daysBtn = document.createElement("button");
+    daysBtn.type = "button";
+    daysBtn.className = "btn btn-sm";
+    daysBtn.textContent = T.freqDays;
+    freqWrap.appendChild(dailyBtn);
+    freqWrap.appendChild(daysBtn);
+    body.appendChild(freqWrap);
+
+    const initialType = habit.schedule && habit.schedule.type === "days" ? "days" : "daily";
+    const initialDays = habit.schedule && habit.schedule.type === "days" ? habit.schedule.days : [];
+    const dayToggle = createDayToggleGroup(initialDays);
+    const daysRow = document.createElement("div");
+    daysRow.style.marginTop = "0.6rem";
+    daysRow.appendChild(dayToggle.el);
+    body.appendChild(daysRow);
+
+    let currentType = initialType;
+    function setActive(type) {
+      currentType = type;
+      dailyBtn.classList.toggle("btn-primary", type === "daily");
+      daysBtn.classList.toggle("btn-primary", type === "days");
+      daysRow.hidden = type !== "days";
+    }
+    setActive(initialType);
+    dailyBtn.addEventListener("click", () => setActive("daily"));
+    daysBtn.addEventListener("click", () => setActive("days"));
+
+    body.appendChild(errEl);
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "btn btn-primary btn-sm";
+    saveBtn.style.marginTop = "0.6rem";
+    saveBtn.textContent = T.save;
+    saveBtn.addEventListener("click", async () => {
+      const name = nameInput.value.trim();
+      if (!name) return showError(errEl, T.errorNameRequired);
+      let schedule;
+      if (currentType === "days") {
+        const days = dayToggle.getDays();
+        if (days.length === 0) return showError(errEl, T.errorDaysRequired);
+        schedule = { type: "days", days };
+      } else {
+        schedule = { type: "daily", days: [] };
+      }
+      hideError(errEl);
+
+      const list = await getHabitsList();
+      const item = list.find((x) => x.id === habit.id);
+      if (item) {
+        item.name = name;
+        item.schedule = schedule;
+      }
+      await saveHabitsList(list);
+      Modal.close();
+      await renderHabitsMini();
+    });
+    body.appendChild(saveBtn);
+
+    Modal.open({
+      title: T.editHabit,
+      bodyNode: body,
+      buttons: [{ label: T.cancel, onClick: null }]
     });
   }
 
