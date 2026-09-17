@@ -1,0 +1,1067 @@
+/* ===== المتغيرات العامة ===== */
+:root {
+  --paper: #EEEDE7;
+  --panel: #F7F6F2;
+  --ink: #22252A;
+  --ink-soft: #55585F;
+  --line: #DAD8CF;
+
+  --c-appointment: #4A5FA5;
+  --c-appointment-bg: #E7EAF4;
+  --c-task: #B5562F;
+  --c-task-bg: #F5E5DD;
+  --c-habit: #3B6E64;
+  --c-habit-bg: #E1EBE8;
+
+  --danger: #B5562F;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(34, 37, 42, 0.08), 0 1px 2px rgba(34, 37, 42, 0.06);
+
+  /* مستويات أهمية العادات */
+  --priority-high: #B23A3A;
+  --priority-high-bg: #F7E1E1;
+  --priority-medium: #B5562F;
+  --priority-normal: #9A988E;
+  --priority-low: #D3D1C6;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+img, svg { max-width: 100%; }
+
+h1, h2, h3 {
+  font-family: "Noto Kufi Arabic", "IBM Plex Sans Arabic", sans-serif;
+  font-weight: 700;
+  margin: 0 0 0.5em;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+bdi { unicode-bidi: isolate; }
+
+/* ===== الهيكل العام ===== */
+.app-header {
+  background: var(--panel);
+  border-block-end: 1px solid var(--line);
+  padding-inline: 1rem;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+}
+
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 0.6rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.app-title {
+  font-size: 1.4rem;
+  margin: 0;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ===== شاشة تسجيل الدخول ===== */
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--paper);
+}
+.auth-box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem 1.5rem;
+  width: 100%;
+  max-width: 380px;
+  box-sizing: border-box;
+}
+.auth-title {
+  text-align: center;
+  margin-block-end: 1.5rem;
+  font-size: 1.6rem;
+}
+.auth-box .field { margin-block-end: 0.9rem; }
+.auth-box button[type="submit"] { width: 100%; margin-block-start: 0.5rem; min-height: 44px; }
+
+/* ===== مؤشر المزامنة ===== */
+.sync-status {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.sync-status--synced { color: var(--c-habit); border-color: var(--c-habit); }
+.sync-status--syncing { color: var(--c-appointment); border-color: var(--c-appointment); }
+.sync-status--offline { color: var(--c-task); border-color: var(--c-task); }
+
+.btn-logout {
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+}
+.btn-logout:hover { color: var(--danger); }
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 0.4rem;
+  margin-block-end: -1px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-block-end: 3px solid transparent;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-family: "Noto Kufi Arabic", sans-serif;
+  font-size: 1.05rem;
+}
+
+.tab-btn.active {
+  color: var(--c-appointment);
+  border-block-end-color: var(--c-appointment);
+}
+
+.app-main {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: 1rem;
+  padding-block-end: 3rem;
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ===== أزرار ===== */
+.btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.btn:hover { background: #ECEAE1; }
+
+.btn-primary {
+  background: var(--c-appointment);
+  border-color: var(--c-appointment);
+  color: #fff;
+}
+.btn-primary:hover { background: #3E5090; }
+
+.btn-danger {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  padding: 0.25rem 0.4rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-danger:hover { text-decoration: underline; }
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--ink-soft);
+}
+
+.btn-sm { padding: 0.3rem 0.6rem; font-size: 0.9rem; }
+
+/* ===== بطاقات / لوحات ===== */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-block-end: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.panel-header h2 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+/* ===== نموذج عام ===== */
+.form-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-block-end: 0.6rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 120px;
+}
+
+.field label {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.field input, .field select, .field textarea {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  text-align: start;
+}
+
+.field-checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  font-size: 1rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 0.9rem;
+  margin-block-end: 0.5rem;
+  display: none;
+}
+.form-error.show { display: block; }
+
+/* ===== أسبوع: تنقل ===== */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.week-nav .week-range {
+  font-weight: 600;
+  margin-inline: 0.5rem;
+}
+
+.day-tabs {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  margin-block-end: 1rem;
+  padding-block-end: 0.2rem;
+}
+
+.day-tab {
+  flex: 1 0 auto;
+  min-width: 74px;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.4rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.day-tab .dow { display: block; font-size: 0.85rem; font-weight: 600; }
+.day-tab .dnum { display: block; font-size: 1.1rem; font-family: "Noto Kufi Arabic"; }
+
+.day-tab.today { border-color: var(--c-appointment); }
+.day-tab.selected {
+  background: var(--c-appointment);
+  color: #fff;
+  border-color: var(--c-appointment);
+}
+
+@media (max-width: 480px) {
+  .day-tabs { gap: 0.2rem; }
+  .day-tab { min-width: 0; flex: 1 1 0; padding: 0.4rem 0.1rem; }
+  .day-tab .dow { font-size: 0.72rem; }
+  .day-tab .dnum { font-size: 1rem; }
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.3rem;
+  margin-inline-start: auto;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.week-grid > .panel { min-width: 0; }
+
+@media (max-width: 860px) {
+  .week-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== قوائم مواعيد/مهام ===== */
+.list { list-style: none; margin: 0; padding: 0; }
+
+.item-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  padding: 0.55rem 0.3rem;
+  border-block-end: 1px solid var(--line);
+}
+.item-row:last-child { border-block-end: none; }
+
+.badge {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.item-time {
+  font-family: "Noto Kufi Arabic";
+  font-weight: 600;
+  min-width: 3.2em;
+  flex: none;
+  color: var(--c-appointment);
+}
+
+.item-title {
+  flex: 1 1 140px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.item-title.done { text-decoration: line-through; color: var(--ink-soft); }
+
+.item-cat-tag {
+  font-size: 0.78rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.recur-icon { color: var(--ink-soft); margin-inline-end: 0.2rem; }
+
+.empty-msg {
+  color: var(--ink-soft);
+  padding: 0.5rem 0.2rem;
+  font-style: normal;
+}
+
+/* ===== قسم الأجندة الأسبوعية (خارج البطاقة، بعرض كامل) ===== */
+.agenda-section {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-block-end: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.agenda-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block-end: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.agenda-section-title {
+  font-family: "Noto Kufi Arabic", sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.agenda-mode-toggle { display: flex; gap: 0.3rem; }
+@media (min-width: 768px) {
+  .agenda-mode-toggle { display: none; }
+}
+
+.agenda-wrap { overflow-x: auto; }
+
+/* الوضع الافتراضي: حاسوب، الأسبوع كاملا، أعمدة مرنة بلا عرض ثابت */
+.agenda-grid {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+}
+/* الهاتف: يوم واحد فقط */
+.agenda-grid.is-single {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+/* الهاتف مع تفعيل عرض الأسبوع كاملا: عرض أدنى للأعمدة + تمرير أفقي داخل الحاوية */
+.agenda-grid.is-scrollable {
+  grid-template-columns: 56px repeat(7, minmax(90px, 1fr));
+  min-width: 700px;
+}
+
+/* صف الرأس: زاوية فارغة فوق عمود الساعات + رأس كل يوم (نفس الصف دائما، فلا يمكن أن يختلف ارتفاعهما) */
+.agenda-corner {
+  border-block-end: 1px solid var(--line);
+  min-width: 0;
+}
+.agenda-grid.is-scrollable .agenda-corner {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 3;
+  background: var(--panel);
+}
+
+.agenda-day-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding-block: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.82rem;
+  line-height: normal;
+  border-block-end: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
+}
+.agenda-day-head.today { color: var(--c-appointment); }
+.agenda-day-head.selected { background: var(--c-appointment); color: #fff; }
+.agenda-day-head .dh-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agenda-day-head .dh-num { font-family: "Noto Kufi Arabic"; line-height: normal; }
+
+/* صف الجسم: عمود الساعات + جسم كل يوم، يبدأ مباشرة تحت صف الرأس بلا تراكب */
+.agenda-hours { min-width: 0; }
+/* عمود الساعات يبقى ظاهرا أثناء التمرير الأفقي على الهاتف (يمين لأن dir=rtl) */
+.agenda-grid.is-scrollable .agenda-hours {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 2;
+  background: var(--panel);
+}
+
+.agenda-hour-label {
+  height: 48px;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  text-align: center;
+  padding-block-start: 0.15rem;
+  box-sizing: border-box;
+  border-block-start: 1px solid var(--line);
+}
+
+.agenda-day-body {
+  position: relative;
+  min-width: 0;
+  border-inline-start: 1px solid var(--line);
+  background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent 48px);
+}
+
+.agenda-block {
+  position: absolute;
+  border-radius: 6px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.72rem;
+  overflow: hidden;
+  cursor: pointer;
+  color: #fff;
+  line-height: 1.2;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.agenda-block .b-time {
+  font-weight: 700;
+  display: block;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agenda-block .b-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== عادات (أسبوع - مصغرة) ===== */
+.habit-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.2rem 0.4rem 0.4rem;
+  border-block-end: 1px solid var(--line);
+  border-inline-start: 4px solid transparent;
+}
+.habit-mini-row:last-child { border-block-end: none; }
+.habit-mini-row > .h-name { flex: 1; }
+
+.habit-mini-row .h-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.habit-mini-row .h-info .h-name { overflow-wrap: break-word; }
+.habit-mini-row .h-freq {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+.habit-mini-row .h-streak {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* بادئة الأهمية: شريط ملون على البداية المنطقية (يمين في RTL) */
+.habit-mini-row.priority-high, .streak-card.priority-high { border-inline-start-color: var(--priority-high); }
+.habit-mini-row.priority-medium, .streak-card.priority-medium { border-inline-start-color: var(--priority-medium); }
+.habit-mini-row.priority-normal, .streak-card.priority-normal { border-inline-start-color: var(--priority-normal); }
+.habit-mini-row.priority-low, .streak-card.priority-low { border-inline-start-color: var(--priority-low); }
+
+.priority-badge-high {
+  color: var(--priority-high);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* اختيار تكرار العادة (كل يوم / أيام محددة) وأهميتها */
+.freq-toggle, .priority-toggle { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.hint-text {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 0.3rem 0 0;
+}
+
+/* بنك أزرار أيام الأسبوع القابلة للتبديل (تكرار عادة) */
+.day-toggle-group {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.day-toggle-btn {
+  flex: 1 1 0;
+  min-width: 40px;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.2rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.day-toggle-btn.active {
+  background: var(--c-habit);
+  border-color: var(--c-habit);
+  color: #fff;
+}
+
+/* قسم "غير مبرمجة اليوم" القابل للطي */
+.unscheduled-details { margin-block-start: 0.5rem; }
+.unscheduled-details summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  padding: 0.4rem 0.2rem;
+  list-style: none;
+}
+.unscheduled-details summary::-webkit-details-marker { display: none; }
+.unscheduled-details summary::marker { content: ""; }
+.unscheduled-details summary::before { content: "▸ "; }
+.unscheduled-details[open] summary::before { content: "▾ "; }
+
+/* قسم "إدارة العادات" القابل للطي (صفحة الأسبوع) */
+.habit-manage-details {
+  margin-block-start: 0.75rem;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 0.4rem;
+}
+.habit-manage-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.95rem;
+  padding: 0.3rem 0.2rem;
+  list-style: none;
+}
+.habit-manage-details summary::-webkit-details-marker { display: none; }
+.habit-manage-details summary::marker { content: ""; }
+.habit-manage-details summary::before { content: "▸ "; color: var(--ink-soft); }
+.habit-manage-details[open] summary::before { content: "▾ "; }
+
+/* عرض أكثر إحكاما لقائمة إدارة العادات: اسم + تكرار + أهمية في سطر واحد، أزرار أصغر */
+.habit-mini-list-compact .habit-mini-row { padding-block: 0.3rem; gap: 0.4rem; }
+.habit-mini-list-compact .h-info {
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.5rem;
+}
+.habit-mini-list-compact .h-name { font-size: 0.9rem; }
+.habit-mini-list-compact .h-freq { font-size: 0.72rem; }
+.habit-mini-list-compact .btn,
+.habit-mini-list-compact .btn-danger {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+/* ===== الاستمرارية ===== */
+.streak-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--priority-normal);
+  background: #fff;
+  border-radius: var(--radius);
+  margin-block-end: 0.6rem;
+}
+.streak-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.streak-card-name { font-weight: 600; }
+.streak-card-numbers { display: flex; gap: 0.6rem; align-items: baseline; font-size: 0.85rem; }
+.streak-card-current { font-family: "Noto Kufi Arabic"; color: var(--c-habit); font-size: 1rem; }
+.streak-card-best { color: var(--ink-soft); }
+.streak-progress-label {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+}
+.streak-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.streak-badge {
+  background: var(--c-habit-bg);
+  color: var(--c-habit);
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* ===== تنبيه العادات المهمة جدًا الفائتة ===== */
+.missed-warning { border-color: var(--priority-high); }
+.missed-warning .panel-header h2 { color: var(--priority-high); }
+
+/* ===== بدء التتبع من اليوم (زر خفيف) ===== */
+.habits-reset-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-end: 0.4rem;
+}
+.btn-subtle {
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.3rem 0.2rem;
+}
+.btn-subtle:hover { color: var(--danger); }
+.btn-subtle:disabled { color: var(--ink-soft); opacity: 0.6; cursor: default; text-decoration: none; }
+
+/* ===== قفل العادات المهمة جدًا في الأيام الفائتة (تتبع اليوم) ===== */
+.habit-mini-row input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
+.h-lock { font-size: 0.85rem; cursor: help; }
+.h-missed-tag {
+  font-size: 0.72rem;
+  color: var(--priority-high);
+  font-weight: 600;
+  background: var(--priority-high-bg);
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ===== رسالة تهنئة عابرة ===== */
+.habit-toast {
+  position: fixed;
+  bottom: 1.2rem;
+  inset-inline: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 250;
+  pointer-events: none;
+}
+.habit-toast-inner {
+  background: var(--c-habit);
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  animation: habit-toast-fade 3s ease forwards;
+}
+@keyframes habit-toast-fade {
+  0% { opacity: 0; transform: translateY(10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.stats-month-label {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+/* ===== صفحة العادات ===== */
+.habit-progress-row {
+  margin-block-end: 0.9rem;
+}
+.habit-progress-row .hp-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.3rem;
+  margin-block-end: 0.3rem;
+  font-size: 0.92rem;
+}
+.progress-bar {
+  height: 10px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--c-habit);
+  border-radius: 999px;
+}
+
+.heatmap-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.35rem;
+}
+.heatmap-label {
+  width: 90px;
+  flex: none;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.heatmap-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding-block: 2px;
+}
+.heatmap-cells {
+  display: flex;
+  gap: 3px;
+  width: max-content;
+}
+.heatmap-cell {
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border-radius: 3px;
+  background: transparent;
+  border: 1px solid transparent;
+  flex: none;
+  cursor: pointer;
+}
+/* مبرمج ومنجز */
+.heatmap-cell.done { background: var(--c-habit); border-color: var(--c-habit); }
+/* مبرمج وغير منجز: فارغ بحدود ملونة */
+.heatmap-cell.scheduled-empty { background: #fff; border-color: var(--c-habit); }
+/* غير مبرمج: مطفأ اللون */
+.heatmap-cell.unscheduled { background: var(--line); opacity: 0.45; }
+/* يوم فائت لعادة مهمة جدًا */
+.heatmap-cell.missed-critical { background: var(--priority-high-bg); border-color: var(--priority-high); }
+/* يوم مستقبلي: منقّط شفاف كما كان */
+.heatmap-cell.future { background: transparent; border: 1px dashed var(--line); cursor: default; }
+/* يوم قبل تاريخ بدء التتبع: محايد تماما، غير قابل للتأشير */
+.heatmap-cell.before-start { background: transparent; border: 1px dashed var(--line); opacity: 0.35; cursor: default; }
+/* يوم فات لعادة مهمة جدًا: مقفل (سواء أُنجز أم لا)، لا يمكن تعديله بعد الآن */
+.heatmap-cell.locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  line-height: 1;
+  cursor: help;
+}
+.heatmap-cell:not(.future):not(.before-start):not(.locked):hover { outline: 2px solid var(--c-habit); outline-offset: 1px; }
+
+/* ===== ميزانية ===== */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-block-end: 1rem;
+}
+@media (max-width: 700px) {
+  .summary-cards { grid-template-columns: 1fr; }
+}
+.summary-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.9rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.summary-card .sc-label { color: var(--ink-soft); font-size: 0.9rem; }
+.summary-card .sc-value { font-size: 1.5rem; font-family: "Noto Kufi Arabic"; margin-block-start: 0.2rem; }
+.summary-card.income .sc-value { color: var(--c-habit); }
+.summary-card.expense .sc-value { color: var(--c-task); }
+.summary-card.balance .sc-value.positive { color: var(--c-habit); }
+.summary-card.balance .sc-value.negative { color: var(--c-task); }
+
+.breakdown-row {
+  margin-block-end: 0.5rem;
+}
+.breakdown-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  margin-block-end: 0.2rem;
+}
+.breakdown-bar {
+  height: 8px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.breakdown-bar-fill {
+  height: 100%;
+  background: var(--c-task);
+}
+
+.debts-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-block-end: 1rem;
+}
+@media (max-width: 700px) {
+  .debts-totals { grid-template-columns: 1fr; }
+}
+
+.person-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-block-end: 0.6rem;
+  background: #fff;
+}
+.person-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  margin-block-end: 0.3rem;
+}
+.net-positive { color: var(--c-habit); }
+.net-negative { color: var(--c-task); }
+
+/* ===== نافذة منبثقة (modal) ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(34, 37, 42, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+.modal-overlay.show { display: flex; }
+
+.modal-box {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.modal-box h3 { margin-block-end: 0.75rem; }
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  margin-block-start: 1rem;
+  flex-wrap: wrap;
+}
+
+.cat-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  margin-inline-end: 0.3rem;
+  margin-block-end: 0.3rem;
+  background: #fff;
+}
+.cat-swatch input[type="color"] {
+  width: 22px;
+  height: 22px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.cat-list-edit { display: flex; flex-wrap: wrap; margin-block-end: 0.6rem; }
+
+.section-title-sm {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  margin-block-end: 0.4rem;
+}
+
+@media (max-width: 500px) {
+  .app-title { font-size: 1.2rem; }
+  .field { flex: 1 1 100%; }
+}
+
+/* ===== لمسات الهاتف: أهداف لمس أكبر وتكديس عمودي ===== */
+@media (max-width: 640px) {
+  .btn, .tab-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-sm { min-height: 40px; padding: 0.4rem 0.7rem; }
+  .day-tab { min-height: 44px; }
+  .day-toggle-btn { min-height: 44px; }
+  .field input, .field select, .field textarea { min-height: 44px; }
+  input[type="checkbox"] { width: 20px; height: 20px; flex: none; }
+
+  .form-row { flex-direction: column; align-items: stretch; }
+  .form-row .field { flex: 1 1 auto; width: 100%; }
+  .form-row > button { width: 100%; }
+
+  .app-main { padding-inline: 0.75rem; }
+}
+
+/* ===== تحديث التطبيق (PWA) ===== */
+.update-banner {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 300;
+  background: var(--c-appointment);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow);
+}
+.update-banner button {
+  background: #fff;
+  color: var(--c-appointment);
+  border: none;
+  border-radius: 999px;
+  padding: 0.25rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ===== تثبيت التطبيق (PWA) ===== */
+.btn-install {
+  background: transparent;
+  border: 1px solid var(--c-appointment);
+  color: var(--c-appointment);
+  font-size: 0.82rem;
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+}
+.btn-install:hover { background: var(--c-appointment); color: #fff; }

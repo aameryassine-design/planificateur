@@ -1,0 +1,278 @@
+// نصوص الواجهة بالعربية - كل النصوص مجمعة هنا لتسهيل التعديل
+const T = {
+  appName: "المخطط",
+
+  // علامات التبويب الرئيسية
+  tabWeek: "الأسبوع",
+  tabHabits: "العادات",
+  tabBudget: "الميزانية",
+
+  // أزرار عامة
+  add: "إضافة",
+  save: "حفظ",
+  cancel: "إلغاء",
+  delete: "حذف",
+  edit: "تعديل",
+  close: "إغلاق",
+  confirm: "تأكيد",
+  export: "تصدير",
+  import: "استيراد",
+
+  // أيام الأسبوع (0 = الإثنين ... 6 = الأحد)
+  weekdays: ["الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"],
+  weekdaysShort: ["إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت", "أحد"],
+  weekdaysTiny: ["إثن", "ثلا", "أرب", "خمي", "جمع", "سبت", "أحد"],
+
+  // الأشهر (بالاستعمال المغربي)
+  months: ["يناير", "فبراير", "مارس", "أبريل", "ماي", "يونيو", "يوليوز", "غشت", "شتنبر", "أكتوبر", "نونبر", "دجنبر"],
+
+  // تنقل عام
+  previous: "السابق",
+  next: "التالي",
+  thisWeek: "هذا الأسبوع",
+  thisMonth: "هذا الشهر",
+  today: "اليوم",
+  todayTracking: "تتبع اليوم",
+
+  // صفحة الأسبوع
+  appointments: "المواعيد",
+  tasks: "المهام",
+  habitsToday: "العادات",
+  addAppointment: "إضافة موعد",
+  addTask: "إضافة مهمة",
+  time: "الوقت",
+  duration: "المدة (دقيقة)",
+  title: "العنوان",
+  category: "الفئة",
+  repeatWeekly: "تكرار كل أسبوع",
+  noAppointments: "لا توجد مواعيد لهذا اليوم",
+  noTasks: "لا توجد مهام لهذا اليوم",
+  noHabits: "لم تتم إضافة أي عادة بعد",
+  postponeTasks: "تأجيل إلى الغد",
+  viewList: "قائمة",
+  viewAgenda: "أجندة",
+  deleteRecurringTitle: "حذف الموعد المتكرر",
+  deleteThisOccurrence: "هذا الموعد فقط",
+  deleteAllOccurrences: "كل المواعيد المتكررة",
+  recurringIcon: "↻",
+
+  // الفئات
+  categories: "الفئات",
+  manageCategories: "إدارة الفئات",
+  categoryName: "اسم الفئة",
+  categoryColor: "اللون",
+  addCategory: "إضافة فئة",
+  defaultCategories: {
+    work: "عمل",
+    personal: "شخصي",
+    health: "صحة",
+    other: "أخرى"
+  },
+
+  // العادات (بطاقة إضافة)
+  addHabit: "إضافة عادة",
+  habitName: "اسم العادة",
+  confirmDeleteHabit: "هل تريد حذف هذه العادة؟ سيتم حذف كل سجلاتها.",
+  editHabit: "تعديل العادة",
+  freqDaily: "كل يوم",
+  freqDays: "أيام محددة",
+  errorDaysRequired: "الرجاء اختيار يوم واحد على الأقل",
+  freqForcedDaily: "العادات المهمة جدًا تكون كل يوم",
+  habitManageTitle: "إدارة العادات",
+
+  // أهمية العادة
+  priorityLabel: "الأهمية",
+  priorityHigh: "مهم جدًا",
+  priorityMedium: "مهم",
+  priorityNormal: "عادي",
+  priorityLow: "ثانوي",
+  priorityBadgeHigh: "!!",
+  confirmDowngradeImportant: "هذه عادة مهمة جدًا، هل أنت متأكد؟",
+  confirmForceDailyMessage: "سيتم تحويل هذه العادة إلى كل يوم. هل تريد المتابعة؟",
+
+  // الاستمرارية
+  streakSectionTitle: "الاستمرارية",
+  streakBest: "الرقم القياسي",
+  streakDaysUnit: "يوم",
+  congratsPrefix: "أحسنت!",
+  congratsSuffix: "يومًا متتالية",
+  missedWarningTitle: "فاتتك",
+  missedYesterday: "أمس",
+  noStreakData: "لا توجد بيانات كافية بعد",
+
+  // إعادة الانطلاق من اليوم
+  habitsResetBtn: "بدء التتبع من اليوم",
+  confirmResetTracking: "سيتم حذف كل تتبع العادات قبل اليوم. المهام والمواعيد والميزانية لن تتأثر. هل أنت متأكد؟",
+  resettingTracking: "...جارٍ الحذف",
+
+  // قفل العادات المهمة جدًا في الأيام الفائتة
+  lockedHighTooltip: "لا يمكن تعديل يوم فات لعادة مهمة جدًا",
+  missedTagInline: "فاتت",
+
+  // صفحة العادات (الشهرية)
+  progress: "التقدم",
+  heatmap: "خريطة الحرارة",
+  trend: "منحنى التقدم",
+  daysCompleted: "أيام منجزة",
+  ofDaysElapsed: "من الأيام المنقضية",
+  noTrendData: "لا توجد بيانات بعد لهذا الشهر",
+  noHabitsToday: "لا توجد عادات مبرمجة لهذا اليوم",
+  unscheduledToday: "غير مبرمجة اليوم",
+
+  // صفحة الميزانية
+  income: "دخل",
+  expense: "مصروف",
+  totalIncome: "مجموع الدخل",
+  totalExpense: "مجموع المصاريف",
+  balance: "الباقي",
+  amount: "المبلغ",
+  note: "ملاحظة",
+  date: "التاريخ",
+  addEntry: "إضافة",
+  entries: "الحركات",
+  noEntries: "لا توجد حركات لهذا الشهر",
+  breakdown: "توزيع المصاريف حسب الفئة",
+  noBreakdown: "لا توجد مصاريف بعد",
+  currency: "درهم",
+  categoryPlaceholder: "مثال: أكل، نقل، فواتير...",
+
+  // الديون
+  debts: "الديون",
+  debtLent: "أقرضت",
+  debtBorrowed: "اقترضت",
+  person: "الشخص",
+  totalOwedToMe: "لي عند الناس",
+  totalIOwe: "علي للناس",
+  addDebt: "إضافة",
+  noDebts: "لا توجد ديون مسجلة",
+  netBalance: "الرصيد الصافي",
+  confirmDeleteDebt: "هل تريد حذف هذه الحركة؟",
+
+  // رسائل التحقق
+  errorTitleRequired: "الرجاء إدخال العنوان",
+  errorTimeInvalid: "الرجاء إدخال وقت صحيح",
+  errorAmountInvalid: "الرجاء إدخال مبلغ أكبر من صفر",
+  errorCategoryRequired: "الرجاء إدخال الفئة",
+  errorPersonRequired: "الرجاء إدخال اسم الشخص",
+  errorNameRequired: "الرجاء إدخال الاسم",
+
+  // تصدير / استيراد
+  confirmImport: "سيتم استبدال كل البيانات الحالية بالبيانات المستوردة. هل تريد المتابعة؟",
+  importSuccess: "تم استيراد البيانات بنجاح",
+  importError: "ملف غير صالح، تعذر الاستيراد",
+  exportFileName: "المخطط-بيانات",
+
+  // تسجيل الدخول
+  authEmail: "البريد الإلكتروني",
+  authPassword: "كلمة المرور",
+  authSignIn: "تسجيل الدخول",
+  authSigningIn: "...جارٍ الدخول",
+  authSignOut: "تسجيل الخروج",
+  authErrorInvalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+  authErrorEmailNotConfirmed: "لم يتم تأكيد البريد الإلكتروني بعد",
+  authErrorOffline: "لا يوجد اتصال بالإنترنت",
+  authErrorGeneric: "حدث خطأ، حاول مرة أخرى",
+  authConfigMissing: "لم يتم إعداد الاتصال بالخادم بعد. عدّل الملف js/config.js بمعطيات مشروعك في Supabase.",
+
+  // المزامنة
+  syncSynced: "متزامن",
+  syncSyncing: "جارٍ المزامنة…",
+  syncOffline: "غير متصل",
+
+  // ترحيل البيانات القديمة
+  migratePrompt: "رفع البيانات الحالية إلى الحساب؟",
+  migrateUpload: "رفع البيانات",
+  migrateSkip: "تجاهل",
+
+  // الإشعارات (APK فقط)
+  reminderTimeLabel: "تذكير (اختياري)",
+  reminderTimeNone: "بدون تذكير",
+  notifPermTitle: "الإشعارات",
+  notifPermExplain: "يستعمل التطبيق إشعارات محلية لتذكيرك بالعادات والمواعيد في وقتها. هل تريد تفعيلها؟",
+  notifPermLater: "لاحقًا",
+  notifPermEnable: "تفعيل",
+  notifDeniedTitle: "الإشعارات معطَّلة",
+  notifDeniedMessage: "لتلقي التذكيرات، فعِّل إذن الإشعارات لهذا التطبيق من إعدادات النظام.",
+  notifOpenSettings: "فتح الإعدادات",
+  notifHabitPrefix: "حان وقت:",
+  notifEveningPrefix: "لم تُنجز بعد:",
+  notifEveningSuffix: "اليوم فقط",
+  notifApptPrefix: "تذكير:",
+  notifApptSuffix: "بعد",
+  notifApptMinutesUnit: "دقيقة",
+  notifSettingsBtn: "الإشعارات",
+  notifSettingsTitle: "إعدادات الإشعارات",
+  notifSettingsHabits: "تذكيرات العادات",
+  notifSettingsEvening: "تذكير الساعة 21:00 للعادات المهمة جدًا",
+  notifSettingsAppointments: "تذكيرات المواعيد",
+  notifSettingsLead: "التذكير قبل الموعد بـ (دقيقة، 0 = تعطيل)",
+  notifTestBtn: "إشعار تجريبي",
+  notifTestSent: "أُرسل! ستصلك خلال ثوانٍ",
+  notifTestBody: "هذا إشعار تجريبي من المخطط",
+
+  // تصدير Excel (ويب فقط، شاشة عريضة)
+  excelPeriodTitle: "اختر الفترة",
+  excelPeriodThisMonth: "هذا الشهر",
+  excelPeriodLastMonth: "الشهر الماضي",
+  excelPeriodCustom: "فترة مخصصة",
+  excelFromDate: "من",
+  excelToDate: "إلى",
+  excelRangeInvalid: "الرجاء اختيار فترة صحيحة",
+  excelGenerate: "إنشاء الملف",
+  excelGenerating: "...جارٍ الإنشاء",
+  excelError: "تعذر إنشاء ملف Excel",
+  excelNoData: "لا توجد بيانات",
+  excelDone: "منجزة",
+  excelNotDone: "غير منجزة",
+  excelYes: "نعم",
+  excelNo: "لا",
+  excelAllMilestonesDone: "كل المراحل أُنجزت",
+  excelCategoryBreakdown: "توزيع المصاريف حسب الفئة",
+  excelBalancePerPerson: "الرصيد حسب الشخص",
+
+  excelSheetDashboard: "لوحة القيادة",
+  excelSheetHabitsDaily: "العادات - يومي",
+  excelSheetStreaks: "الاستمرارية",
+  excelSheetTasks: "المهام",
+  excelSheetAppointments: "المواعيد",
+  excelSheetBudget: "الميزانية",
+  excelSheetDebts: "الديون",
+
+  excelColHabit: "العادة",
+  excelColImportance: "الأهمية",
+  excelColFrequency: "التكرار",
+  excelColDone: "المنجز",
+  excelColScheduled: "المبرمج",
+  excelColPercent: "النسبة",
+  excelColCurrentStreak: "السلسلة الحالية",
+  excelColBestStreak: "أفضل سلسلة",
+  excelColNextMilestone: "المرحلة القادمة",
+  excelColProgress: "التقدم",
+  excelColDate: "التاريخ",
+  excelColTitle: "العنوان",
+  excelColCategory: "الفئة",
+  excelColDoneStatus: "الحالة",
+  excelColTime: "الوقت",
+  excelColDuration: "المدة (دقيقة)",
+  excelColRecurring: "متكرر",
+  excelColType: "النوع",
+  excelColAmount: "المبلغ",
+  excelColNote: "ملاحظة",
+  excelColPerson: "الشخص",
+  excelColBalance: "الرصيد",
+
+  excelKpiHabitsCompletion: "نسبة إنجاز العادات",
+  excelKpiLongestStreak: "أطول سلسلة",
+  excelKpiTasksDone: "المهام المنجزة/الكل",
+  excelKpiIncome: "الدخل",
+  excelKpiExpense: "المصاريف",
+  excelKpiBalance: "الباقي",
+  excelKpiOwedToMe: "لي عند الناس",
+  excelKpiIOwe: "علي للناس",
+
+  excelChartDaily: "% إنجاز العادات يوميًا",
+  excelChartPerHabit: "% الإنجاز حسب العادة",
+  excelChartStreaks: "السلسلة الحالية حسب العادة",
+  excelChartIncomeExpense: "الدخل مقابل المصاريف",
+  excelChartExpenseByCategory: "المصاريف حسب الفئة"
+};

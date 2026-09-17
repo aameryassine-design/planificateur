@@ -1,0 +1,8 @@
+{
+  "appId": "ma.yassine.planificateur",
+  "appName": "المخطط",
+  "webDir": "docs",
+  "android": {
+    "allowMixedContent": false
+  }
+}

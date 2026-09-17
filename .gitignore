@@ -1,0 +1,15 @@
+# اعتماديات npm (تُنصّب محليا عبر npm install)
+node_modules/
+
+# ملفات بناء أندرويد (android/ نفسه مُتتبَّع بالكامل؛ فقط نتاج البناء المحلي مُستثنى)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/.idea/
+android/*.iml
+
+# ملفات نظام التشغيل والمحررات
+.DS_Store
+Thumbs.db

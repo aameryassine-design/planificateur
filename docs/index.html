@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المخطط</title>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#4A5FA5">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="المخطط">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+<div id="update-banner" class="update-banner" hidden>
+  <span>يتوفر تحديث</span>
+  <button type="button" id="btn-update-reload">تحديث</button>
+</div>
+
+<div id="auth-screen" class="auth-screen" style="display:none">
+  <div class="auth-box">
+    <h1 class="auth-title">المخطط</h1>
+    <form id="auth-form">
+      <div class="form-error" id="auth-error"></div>
+      <div class="field">
+        <label for="auth-email">البريد الإلكتروني</label>
+        <input type="email" id="auth-email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="auth-password">كلمة المرور</label>
+        <input type="password" id="auth-password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary" id="auth-submit">تسجيل الدخول</button>
+    </form>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <header class="app-header">
+    <div class="app-header-top">
+      <h1 class="app-title">المخطط</h1>
+      <div class="header-actions">
+        <span id="sync-status" class="sync-status"></span>
+        <button id="btn-install" class="btn-install" hidden>تثبيت التطبيق</button>
+        <button id="btn-notif-settings" class="btn btn-sm" hidden>الإشعارات</button>
+        <button id="btn-export-excel" class="btn btn-sm" hidden>تصدير Excel</button>
+        <button id="btn-export" class="btn btn-sm">تصدير</button>
+        <button id="btn-import" class="btn btn-sm">استيراد</button>
+        <input type="file" id="import-file" accept="application/json" hidden>
+        <button id="btn-logout" class="btn-logout">تسجيل الخروج</button>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn" data-tab="week">الأسبوع</button>
+      <button class="tab-btn" data-tab="habits">العادات</button>
+      <button class="tab-btn" data-tab="budget">الميزانية</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ===== صفحة الأسبوع ===== -->
+    <section id="view-week" class="view">
+      <div class="week-nav">
+        <button id="week-prev" class="btn btn-icon" title="السابق">›</button>
+        <span id="week-range" class="week-range"></span>
+        <button id="week-next" class="btn btn-icon" title="التالي">‹</button>
+        <button id="week-today" class="btn btn-sm">هذا الأسبوع</button>
+      </div>
+
+      <div id="day-tabs" class="day-tabs"></div>
+
+      <div class="week-grid">
+        <div class="panel" id="panel-appointments">
+          <div class="panel-header">
+            <h2>المواعيد</h2>
+            <div class="view-toggle">
+              <button type="button" id="view-list-btn" class="btn btn-sm">قائمة</button>
+              <button type="button" id="view-agenda-btn" class="btn btn-sm">أجندة</button>
+            </div>
+          </div>
+
+          <form id="appointment-form">
+            <div class="form-error" id="appointment-error"></div>
+            <div class="form-row">
+              <div class="field">
+                <label for="appt-time">الوقت</label>
+                <input type="time" id="appt-time" value="09:00">
+              </div>
+              <div class="field">
+                <label for="appt-duration">المدة (دقيقة)</label>
+                <input type="number" id="appt-duration" value="60" min="5" step="5">
+              </div>
+              <div class="field" style="flex:2 1 160px">
+                <label for="appt-title">العنوان</label>
+                <input type="text" id="appt-title">
+              </div>
+              <div class="field">
+                <label for="appt-category">الفئة</label>
+                <select id="appt-category"></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field field-checkbox">
+                <label class="checkbox-inline">
+                  <input type="checkbox" id="appt-repeat">
+                  <span>تكرار كل أسبوع</span>
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary">إضافة موعد</button>
+              <button type="button" id="manage-categories-btn" class="btn btn-sm">إدارة الفئات</button>
+            </div>
+          </form>
+
+          <div id="appointment-list-view">
+            <ul id="appointment-list" class="list"></ul>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-tasks">
+          <div class="panel-header">
+            <h2>المهام</h2>
+            <button type="button" id="postpone-btn" class="btn btn-sm">تأجيل إلى الغد</button>
+          </div>
+          <form id="task-form">
+            <div class="form-error" id="task-error"></div>
+            <div class="form-row">
+              <div class="field" style="flex:2 1 160px">
+                <label for="task-title">العنوان</label>
+                <input type="text" id="task-title">
+              </div>
+              <div class="field">
+                <label for="task-category">الفئة</label>
+                <select id="task-category"></select>
+              </div>
+              <button type="submit" class="btn btn-primary">إضافة مهمة</button>
+            </div>
+          </form>
+          <ul id="task-list" class="list"></ul>
+        </div>
+
+        <div class="panel" id="panel-habits">
+          <div class="panel-header">
+            <h2>العادات</h2>
+          </div>
+          <form id="habit-add-form">
+            <div class="form-error" id="habit-error"></div>
+            <div class="form-row">
+              <div class="field" style="flex:2 1 160px">
+                <label for="habit-name">اسم العادة</label>
+                <input type="text" id="habit-name">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="freq-toggle" id="habit-freq-toggle">
+                <button type="button" class="btn btn-sm btn-primary" data-freq="daily">كل يوم</button>
+                <button type="button" class="btn btn-sm" data-freq="days">أيام محددة</button>
+              </div>
+            </div>
+            <div class="form-row" id="habit-days-row" hidden>
+              <div class="day-toggle-group" id="habit-days-toggle"></div>
+            </div>
+            <div class="form-row">
+              <div class="priority-toggle" id="habit-priority-toggle">
+                <button type="button" class="btn btn-sm" data-priority="high">مهم جدًا</button>
+                <button type="button" class="btn btn-sm" data-priority="medium">مهم</button>
+                <button type="button" class="btn btn-sm btn-primary" data-priority="normal">عادي</button>
+                <button type="button" class="btn btn-sm" data-priority="low">ثانوي</button>
+              </div>
+            </div>
+            <p class="hint-text" id="habit-priority-hint" hidden>العادات المهمة جدًا تكون كل يوم</p>
+            <div class="form-row">
+              <div class="field">
+                <label for="habit-reminder-time">تذكير (اختياري)</label>
+                <input type="time" id="habit-reminder-time">
+              </div>
+            </div>
+            <div class="form-row">
+              <button type="submit" class="btn btn-primary">إضافة عادة</button>
+            </div>
+          </form>
+          <details class="habit-manage-details" id="habit-manage-details">
+            <summary id="habit-manage-summary">إدارة العادات</summary>
+            <ul id="habit-mini-list" class="list habit-mini-list-compact"></ul>
+          </details>
+        </div>
+      </div>
+
+      <div id="agenda-section" class="agenda-section" style="display:none">
+        <div class="agenda-section-header">
+          <span class="agenda-section-title">أجندة الأسبوع</span>
+          <div class="agenda-mode-toggle">
+            <button type="button" id="agenda-day-btn" class="btn btn-sm">يوم</button>
+            <button type="button" id="agenda-week-btn" class="btn btn-sm">أسبوع</button>
+          </div>
+        </div>
+        <div id="appointment-agenda-view" class="agenda-wrap"></div>
+      </div>
+    </section>
+
+    <!-- ===== صفحة العادات ===== -->
+    <section id="view-habits" class="view">
+      <div class="habits-reset-row">
+        <button type="button" id="habits-reset-btn" class="btn-subtle">بدء التتبع من اليوم</button>
+      </div>
+
+      <div class="panel missed-warning" id="habits-missed-panel" hidden>
+        <div class="panel-header"><h2>تنبيهات</h2></div>
+        <ul id="habits-missed-list" class="list"></ul>
+      </div>
+
+      <div class="panel" id="panel-today-tracking">
+        <div class="panel-header"><h2>تتبع اليوم</h2></div>
+        <div class="week-nav">
+          <button id="track-prev" class="btn btn-icon" title="السابق">›</button>
+          <span id="track-label" class="week-range"></span>
+          <button id="track-next" class="btn btn-icon" title="التالي">‹</button>
+          <button id="track-today" class="btn btn-sm">اليوم</button>
+        </div>
+        <ul id="track-list" class="list"></ul>
+        <details class="unscheduled-details" id="track-unscheduled" hidden>
+          <summary id="track-unscheduled-summary">غير مبرمجة اليوم</summary>
+          <ul id="track-unscheduled-list" class="list"></ul>
+        </details>
+      </div>
+
+      <div class="panel" id="panel-streaks">
+        <div class="panel-header"><h2>الاستمرارية</h2></div>
+        <div id="habits-streaks-list"></div>
+      </div>
+
+      <h3 id="stats-month-label" class="stats-month-label"></h3>
+
+      <div class="panel">
+        <div class="panel-header"><h2>التقدم</h2></div>
+        <div id="habits-progress-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>خريطة الحرارة</h2></div>
+        <div id="habits-heatmap"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>منحنى التقدم</h2></div>
+        <div id="habits-trend"></div>
+      </div>
+    </section>
+
+    <!-- ===== صفحة الميزانية ===== -->
+    <section id="view-budget" class="view">
+      <div class="week-nav">
+        <button id="budget-month-prev" class="btn btn-icon" title="السابق">›</button>
+        <span id="budget-month-label" class="week-range"></span>
+        <button id="budget-month-next" class="btn btn-icon" title="التالي">‹</button>
+        <button id="budget-month-today" class="btn btn-sm">هذا الشهر</button>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card income">
+          <div class="sc-label">مجموع الدخل</div>
+          <div class="sc-value" id="sum-income">0.00 درهم</div>
+        </div>
+        <div class="summary-card expense">
+          <div class="sc-label">مجموع المصاريف</div>
+          <div class="sc-value" id="sum-expense">0.00 درهم</div>
+        </div>
+        <div class="summary-card balance">
+          <div class="sc-label">الباقي</div>
+          <div class="sc-value" id="sum-balance">0.00 درهم</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>إضافة حركة</h2></div>
+        <form id="budget-form">
+          <div class="form-error" id="budget-error"></div>
+          <div class="form-row">
+            <div class="field">
+              <label for="budget-type">النوع</label>
+              <select id="budget-type">
+                <option value="expense">مصروف</option>
+                <option value="income">دخل</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="budget-amount">المبلغ</label>
+              <input type="number" id="budget-amount" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label for="budget-category">الفئة</label>
+              <input type="text" id="budget-category" list="budget-cat-suggestions" placeholder="مثال: أكل، نقل، فواتير...">
+              <datalist id="budget-cat-suggestions"></datalist>
+            </div>
+            <div class="field">
+              <label for="budget-note">ملاحظة</label>
+              <input type="text" id="budget-note">
+            </div>
+            <div class="field">
+              <label for="budget-date">التاريخ</label>
+              <input type="date" id="budget-date">
+            </div>
+            <button type="submit" class="btn btn-primary">إضافة</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>الحركات</h2></div>
+        <ul id="budget-entries-list" class="list"></ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>توزيع المصاريف حسب الفئة</h2></div>
+        <div id="budget-breakdown"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>الديون</h2></div>
+        <div class="debts-totals">
+          <div class="summary-card">
+            <div class="sc-label">لي عند الناس</div>
+            <div class="sc-value" id="debt-owed-to-me">0.00 درهم</div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-label">علي للناس</div>
+            <div class="sc-value" id="debt-i-owe">0.00 درهم</div>
+          </div>
+        </div>
+        <form id="debt-form">
+          <div class="form-error" id="debt-error"></div>
+          <div class="form-row">
+            <div class="field">
+              <label for="debt-type">النوع</label>
+              <select id="debt-type">
+                <option value="prete">أقرضت</option>
+                <option value="emprunte">اقترضت</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="debt-person">الشخص</label>
+              <input type="text" id="debt-person">
+            </div>
+            <div class="field">
+              <label for="debt-amount">المبلغ</label>
+              <input type="number" id="debt-amount" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label for="debt-note">ملاحظة</label>
+              <input type="text" id="debt-note">
+            </div>
+            <div class="field">
+              <label for="debt-date">التاريخ</label>
+              <input type="date" id="debt-date">
+            </div>
+            <button type="submit" class="btn btn-primary">إضافة</button>
+          </div>
+        </form>
+        <div id="debts-list"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="./js/i18n.js"></script>
+<script src="./js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<script src="./js/supabase-client.js"></script>
+<script src="./js/utils.js"></script>
+<script src="./js/storage.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/sync.js"></script>
+<script src="./js/notifications.js"></script>
+<script src="./js/semaine.js"></script>
+<script src="./js/habitudes.js"></script>
+<script src="./js/budget.js"></script>
+<script src="./js/export-excel.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
